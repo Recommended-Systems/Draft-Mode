@@ -89,17 +89,25 @@
         .diff-content {
             display: flex;
             min-height: 400px;
+            position: relative;
         }
-
+        
+        .diff-content::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #d0d7de;
+        }
+        
         .diff-side {
             flex: 1;
             overflow-x: auto;
+            position: relative;
         }
-
-        .diff-left {
-            border-right: 1px solid #d0d7de;
-        }
-
+        
         .diff-line {
             padding: 4px 16px;
             font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
@@ -108,6 +116,22 @@
             white-space: pre-wrap;
             word-wrap: break-word;
             min-height: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .line-number {
+            min-width: 40px;
+            padding-right: 8px;
+            color: #656d76;
+            font-size: 11px;
+            text-align: right;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        
+        .line-content {
+            flex: 1;
         }
 
         .diff-removed {
@@ -366,13 +390,23 @@
             };
         }
         
-        // Calculate similarity between two lines
+        // Calculate similarity between two lines with special handling for lists
         function calculateSimilarity(line1, line2) {
             if (!line1 || !line2) return 0;
             
             // Normalize lines by removing extra whitespace
-            const norm1 = line1.trim().replace(/\s+/g, ' ');
-            const norm2 = line2.trim().replace(/\s+/g, ' ');
+            let norm1 = line1.trim().replace(/\s+/g, ' ');
+            let norm2 = line2.trim().replace(/\s+/g, ' ');
+            
+            // Special handling for list items - remove list markers before comparison
+            const listMarkers1 = norm1.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
+            const listMarkers2 = norm2.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
+            
+            if (listMarkers1 && listMarkers2) {
+                // Both are list items, compare without the markers
+                norm1 = norm1.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
+                norm2 = norm2.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
+            }
             
             if (norm1 === norm2) return 1;
             
@@ -563,6 +597,8 @@
             let addedCount = 0;
             let removedCount = 0;
             let modifiedCount = 0;
+            let leftLineNum = 1;
+            let rightLineNum = 1;
             
             diff.forEach(item => {
                 const leftLine = document.createElement('div');
@@ -571,29 +607,52 @@
                 leftLine.className = 'diff-line';
                 rightLine.className = 'diff-line';
                 
+                // Add line numbers and content containers
+                const leftNumSpan = document.createElement('span');
+                const rightNumSpan = document.createElement('span');
+                const leftContentSpan = document.createElement('span');
+                const rightContentSpan = document.createElement('span');
+                
+                leftNumSpan.className = 'line-number';
+                rightNumSpan.className = 'line-number';
+                leftContentSpan.className = 'line-content';
+                rightContentSpan.className = 'line-content';
+                
+                leftLine.appendChild(leftNumSpan);
+                leftLine.appendChild(leftContentSpan);
+                rightLine.appendChild(rightNumSpan);
+                rightLine.appendChild(rightContentSpan);
+                
                 if (item.type === 'unchanged') {
                     leftLine.className += ' diff-unchanged';
                     rightLine.className += ' diff-unchanged';
-                    leftLine.textContent = item.line1;
-                    rightLine.textContent = item.line2;
+                    leftNumSpan.textContent = leftLineNum++;
+                    rightNumSpan.textContent = rightLineNum++;
+                    leftContentSpan.textContent = item.line1;
+                    rightContentSpan.textContent = item.line2;
                 } else if (item.type === 'removed') {
                     leftLine.className += ' diff-removed';
                     rightLine.className += ' diff-unchanged';
-                    leftLine.textContent = item.line1;
-                    rightLine.innerHTML = '&nbsp;';
+                    leftNumSpan.textContent = leftLineNum++;
+                    rightNumSpan.innerHTML = '&nbsp;';
+                    leftContentSpan.textContent = item.line1;
+                    rightContentSpan.innerHTML = '&nbsp;';
                     removedCount++;
                 } else if (item.type === 'added') {
                     leftLine.className += ' diff-unchanged';
                     rightLine.className += ' diff-added';
-                    leftLine.innerHTML = '&nbsp;';
-                    rightLine.textContent = item.line2;
+                    leftNumSpan.innerHTML = '&nbsp;';
+                    rightNumSpan.textContent = rightLineNum++;
+                    leftContentSpan.innerHTML = '&nbsp;';
+                    rightContentSpan.textContent = item.line2;
                     addedCount++;
                 } else if (item.type === 'modified') {
                     leftLine.className += ' diff-modified';
                     rightLine.className += ' diff-modified';
-                    
-                    leftLine.innerHTML = item.leftDiff;
-                    rightLine.innerHTML = item.rightDiff;
+                    leftNumSpan.textContent = leftLineNum++;
+                    rightNumSpan.textContent = rightLineNum++;
+                    leftContentSpan.innerHTML = item.leftDiff;
+                    rightContentSpan.innerHTML = item.rightDiff;
                     modifiedCount++;
                 }
                 
