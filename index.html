@@ -133,6 +133,39 @@
             background-color: #f6f8fa;
         }
 
+        .word-added, .char-added {
+            background-color: #a0f0a0;
+            color: #1a7f37;
+            padding: 1px 2px;
+            border-radius: 3px;
+            border: 1px solid #66d066;
+        }
+
+        .word-removed, .char-removed {
+            background-color: #f0a0a0;
+            color: #82071e;
+            padding: 1px 2px;
+            border-radius: 3px;
+            border: 1px solid #d06666;
+        }
+        
+        /* Better spacing for inline changes */
+        .word-added + .word-added,
+        .char-added + .char-added {
+            margin-left: -1px;
+            border-left: none;
+        }
+        
+        .word-removed + .word-removed,
+        .char-removed + .char-removed {
+            margin-left: -1px;
+            border-left: none;
+        }
+
+        .diff-modified {
+            background-color: #faf7e6;
+        }
+
         .loading {
             text-align: center;
             color: #656d76;
@@ -201,12 +234,263 @@
     </div>
 
     <script>
-        // Simple diff algorithm
-        function computeDiff(text1, text2) {
+        // Compute word-level differences within a line, returning separate left and right views
+        function computeWordDiffSeparate(line1, line2) {
+            if (!line1 && !line2) return { left: '', right: '' };
+            if (!line1) return { left: '', right: `<span class="word-added">${line2}</span>` };
+            if (!line2) return { left: `<span class="word-removed">${line1}</span>`, right: '' };
+            
+            // Split into words but preserve whitespace
+            const words1 = line1.split(/(\s+)/);
+            const words2 = line2.split(/(\s+)/);
+            
+            // If lines are identical, return as is
+            if (line1 === line2) return { left: line1, right: line2 };
+            
+            // Use character-level diff for short lines or very different lines
+            if (words1.length < 3 || words2.length < 3 || 
+                Math.abs(words1.length - words2.length) > Math.max(words1.length, words2.length) * 0.5) {
+                return computeCharDiffSeparate(line1, line2);
+            }
+            
+            // Compute word-level diff using LCS
+            const dp = [];
+            for (let i = 0; i <= words1.length; i++) {
+                dp[i] = [];
+                for (let j = 0; j <= words2.length; j++) {
+                    if (i === 0) dp[i][j] = j;
+                    else if (j === 0) dp[i][j] = i;
+                    else if (words1[i-1] === words2[j-1]) dp[i][j] = dp[i-1][j-1];
+                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+                }
+            }
+            
+            // Backtrack to find the word diff, creating separate left and right views
+            let leftResult = '';
+            let rightResult = '';
+            let i = words1.length, j = words2.length;
+            
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && words1[i-1] === words2[j-1]) {
+                    leftResult = words1[i-1] + leftResult;
+                    rightResult = words2[j-1] + rightResult;
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                    rightResult = `<span class="word-added">${words2[j-1]}</span>` + rightResult;
+                    j--;
+                } else if (i > 0) {
+                    leftResult = `<span class="word-removed">${words1[i-1]}</span>` + leftResult;
+                    i--;
+                }
+            }
+            
+            return { left: leftResult, right: rightResult };
+        }
+        
+        // Compute character-level differences within a line, returning separate left and right views
+        function computeCharDiffSeparate(line1, line2) {
+            const dp = [];
+            const len1 = line1.length;
+            const len2 = line2.length;
+            
+            // Initialize DP table
+            for (let i = 0; i <= len1; i++) {
+                dp[i] = [];
+                for (let j = 0; j <= len2; j++) {
+                    if (i === 0) dp[i][j] = j;
+                    else if (j === 0) dp[i][j] = i;
+                    else if (line1[i-1] === line2[j-1]) dp[i][j] = dp[i-1][j-1];
+                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+                }
+            }
+            
+            // Backtrack to find character diff, creating separate left and right views
+            const leftParts = [];
+            const rightParts = [];
+            let i = len1, j = len2;
+            
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && line1[i-1] === line2[j-1]) {
+                    leftParts.unshift({type: 'unchanged', char: line1[i-1]});
+                    rightParts.unshift({type: 'unchanged', char: line2[j-1]});
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                    rightParts.unshift({type: 'added', char: line2[j-1]});
+                    j--;
+                } else if (i > 0) {
+                    leftParts.unshift({type: 'removed', char: line1[i-1]});
+                    i--;
+                }
+            }
+            
+            // Combine consecutive changes into blocks
+            const combineChanges = (parts) => {
+                let result = '';
+                let currentBlock = null;
+                
+                for (const part of parts) {
+                    if (currentBlock && currentBlock.type === part.type) {
+                        // Extend current block
+                        currentBlock.text += part.char;
+                    } else {
+                        // Finish previous block
+                        if (currentBlock) {
+                            if (currentBlock.type === 'unchanged') {
+                                result += currentBlock.text;
+                            } else {
+                                const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
+                                result += `<span class="${spanClass}">${currentBlock.text}</span>`;
+                            }
+                        }
+                        // Start new block
+                        currentBlock = {type: part.type, text: part.char};
+                    }
+                }
+                
+                // Finish final block
+                if (currentBlock) {
+                    if (currentBlock.type === 'unchanged') {
+                        result += currentBlock.text;
+                    } else {
+                        const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
+                        result += `<span class="${spanClass}">${currentBlock.text}</span>`;
+                    }
+                }
+                
+                return result;
+            };
+            
+            return { 
+                left: combineChanges(leftParts), 
+                right: combineChanges(rightParts) 
+            };
+        }
+        
+        // Calculate similarity between two lines
+        function calculateSimilarity(line1, line2) {
+            if (!line1 || !line2) return 0;
+            
+            // Normalize lines by removing extra whitespace
+            const norm1 = line1.trim().replace(/\s+/g, ' ');
+            const norm2 = line2.trim().replace(/\s+/g, ' ');
+            
+            if (norm1 === norm2) return 1;
+            
+            // Use Levenshtein distance for similarity
+            const len1 = norm1.length;
+            const len2 = norm2.length;
+            const dp = [];
+            
+            for (let i = 0; i <= len1; i++) {
+                dp[i] = [i];
+                for (let j = 1; j <= len2; j++) {
+                    dp[i][j] = 0;
+                }
+            }
+            for (let j = 0; j <= len2; j++) {
+                dp[0][j] = j;
+            }
+            
+            for (let i = 1; i <= len1; i++) {
+                for (let j = 1; j <= len2; j++) {
+                    const cost = norm1[i-1] === norm2[j-1] ? 0 : 1;
+                    dp[i][j] = Math.min(
+                        dp[i-1][j] + 1,    // deletion
+                        dp[i][j-1] + 1,    // insertion
+                        dp[i-1][j-1] + cost // substitution
+                    );
+                }
+            }
+            
+            const maxLen = Math.max(len1, len2);
+            return maxLen === 0 ? 1 : (maxLen - dp[len1][len2]) / maxLen;
+        }
+        
+        // Join consecutive lines that might have been split
+        function reconstructLines(text1, text2) {
             const lines1 = text1.split('\n');
             const lines2 = text2.split('\n');
             
-            // Simple line-by-line diff using dynamic programming
+            // Look for cases where lines might have been merged or split
+            const reconstructed1 = [];
+            const reconstructed2 = [];
+            
+            let i = 0, j = 0;
+            while (i < lines1.length || j < lines2.length) {
+                if (i >= lines1.length) {
+                    // Remaining lines in second text
+                    reconstructed1.push('');
+                    reconstructed2.push(lines2[j]);
+                    j++;
+                } else if (j >= lines2.length) {
+                    // Remaining lines in first text
+                    reconstructed1.push(lines1[i]);
+                    reconstructed2.push('');
+                    i++;
+                } else {
+                    // Check if current lines are similar
+                    const similarity = calculateSimilarity(lines1[i], lines2[j]);
+                    
+                    if (similarity > 0.3) {
+                        // Lines are similar enough
+                        reconstructed1.push(lines1[i]);
+                        reconstructed2.push(lines2[j]);
+                        i++;
+                        j++;
+                    } else {
+                        // Check if line1[i] matches line2[j+1] (line added)
+                        if (j + 1 < lines2.length && calculateSimilarity(lines1[i], lines2[j + 1]) > 0.7) {
+                            reconstructed1.push('');
+                            reconstructed2.push(lines2[j]);
+                            j++;
+                        }
+                        // Check if line1[i+1] matches line2[j] (line removed)
+                        else if (i + 1 < lines1.length && calculateSimilarity(lines1[i + 1], lines2[j]) > 0.7) {
+                            reconstructed1.push(lines1[i]);
+                            reconstructed2.push('');
+                            i++;
+                        }
+                        // Check if lines might have been merged (line1[i] + line1[i+1] ≈ line2[j])
+                        else if (i + 1 < lines1.length) {
+                            const merged = lines1[i] + ' ' + lines1[i + 1];
+                            if (calculateSimilarity(merged, lines2[j]) > 0.7) {
+                                reconstructed1.push(merged);
+                                reconstructed2.push(lines2[j]);
+                                i += 2;
+                                j++;
+                                continue;
+                            }
+                        }
+                        // Check if line might have been split (line1[i] ≈ line2[j] + line2[j+1])
+                        else if (j + 1 < lines2.length) {
+                            const merged = lines2[j] + ' ' + lines2[j + 1];
+                            if (calculateSimilarity(lines1[i], merged) > 0.7) {
+                                reconstructed1.push(lines1[i]);
+                                reconstructed2.push(merged);
+                                i++;
+                                j += 2;
+                                continue;
+                            }
+                        }
+                        
+                        // Default case: lines are different
+                        reconstructed1.push(lines1[i]);
+                        reconstructed2.push(lines2[j]);
+                        i++;
+                        j++;
+                    }
+                }
+            }
+            
+            return [reconstructed1, reconstructed2];
+        }
+        
+        // Line-level diff algorithm with improved line matching
+        function computeDiff(text1, text2) {
+            // First, try to reconstruct lines that might have been split/merged
+            const [lines1, lines2] = reconstructLines(text1, text2);
+            
+            // Compute line-level diff using dynamic programming
             const dp = [];
             for (let i = 0; i <= lines1.length; i++) {
                 dp[i] = [];
@@ -235,7 +519,37 @@
                 }
             }
             
-            return diff;
+            // Post-process to identify modified lines and compute word/char diffs
+            const processedDiff = [];
+            for (let k = 0; k < diff.length; k++) {
+                if (diff[k].type === 'removed' && k + 1 < diff.length && diff[k + 1].type === 'added') {
+                    // Check if these lines are similar enough to be considered a modification
+                    const similarity = calculateSimilarity(diff[k].line1, diff[k + 1].line2);
+                    
+                    if (similarity > 0.3) {
+                        // This is likely a modified line, compute word-level diff
+                        const line1 = diff[k].line1;
+                        const line2 = diff[k + 1].line2;
+                        const wordDiff = computeWordDiffSeparate(line1, line2);
+                        
+                        processedDiff.push({
+                            type: 'modified',
+                            line1: line1,
+                            line2: line2,
+                            leftDiff: wordDiff.left,
+                            rightDiff: wordDiff.right
+                        });
+                        k++; // Skip the next item since we've processed it
+                    } else {
+                        // Lines are too different, treat as separate removal and addition
+                        processedDiff.push(diff[k]);
+                    }
+                } else {
+                    processedDiff.push(diff[k]);
+                }
+            }
+            
+            return processedDiff;
         }
         
         function renderDiff(diff) {
@@ -248,6 +562,7 @@
             
             let addedCount = 0;
             let removedCount = 0;
+            let modifiedCount = 0;
             
             diff.forEach(item => {
                 const leftLine = document.createElement('div');
@@ -273,13 +588,32 @@
                     leftLine.innerHTML = '&nbsp;';
                     rightLine.textContent = item.line2;
                     addedCount++;
+                } else if (item.type === 'modified') {
+                    leftLine.className += ' diff-modified';
+                    rightLine.className += ' diff-modified';
+                    
+                    leftLine.innerHTML = item.leftDiff;
+                    rightLine.innerHTML = item.rightDiff;
+                    modifiedCount++;
                 }
                 
                 leftDiv.appendChild(leftLine);
                 rightDiv.appendChild(rightLine);
             });
             
-            statsDiv.textContent = `${addedCount} additions, ${removedCount} deletions`;
+            let statsText = '';
+            if (addedCount > 0) statsText += `${addedCount} additions`;
+            if (removedCount > 0) {
+                if (statsText) statsText += ', ';
+                statsText += `${removedCount} deletions`;
+            }
+            if (modifiedCount > 0) {
+                if (statsText) statsText += ', ';
+                statsText += `${modifiedCount} modifications`;
+            }
+            if (!statsText) statsText = 'No changes';
+            
+            statsDiv.textContent = statsText;
         }
         
         function updateDiff() {
