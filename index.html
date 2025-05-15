@@ -84,69 +84,131 @@
             border-bottom: 1px solid #d0d7de;
             font-weight: 600;
             font-size: 14px;
-        }
-
-        .diff-content {
             display: flex;
-            min-height: 400px;
-            position: relative;
+            justify-content: space-between;
+            align-items: center;
         }
         
-        .diff-content::before {
+        .render-toggle {
+            display: flex;
+            align-items: center;
+        }
+        
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: normal;
+        }
+        
+        .toggle-checkbox {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-button {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background-color: #d0d7de;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+            margin-right: 8px;
+        }
+        
+        .toggle-button::before {
             content: '';
             position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background-color: #d0d7de;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background-color: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s;
         }
         
-        .diff-side {
-            flex: 1;
-            overflow-x: auto;
-            position: relative;
+        .toggle-checkbox:checked + .toggle-button {
+            background-color: #1976d2;
         }
         
-        .diff-line {
-            padding: 4px 16px;
+        .toggle-checkbox:checked + .toggle-button::before {
+            transform: translateX(20px);
+        }
+
+        /* Table-based diff layout for proper alignment */
+        .diff-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
             font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
             font-size: 13px;
+        }
+        
+        .diff-header-row {
+            background-color: #f6f8fa;
+            border-bottom: 1px solid #d0d7de;
+        }
+        
+        .diff-header-cell {
+            padding: 8px 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .diff-row {
+            border-bottom: 1px solid transparent;
+        }
+        
+        .diff-line-cell {
+            padding: 4px 0;
+            vertical-align: top;
             line-height: 1.4;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            min-height: 20px;
-            display: flex;
-            align-items: flex-start;
+            position: relative;
         }
         
         .line-number {
-            min-width: 40px;
-            padding-right: 8px;
+            width: 50px;
+            padding: 0 8px;
             color: #656d76;
             font-size: 11px;
             text-align: right;
             user-select: none;
-            flex-shrink: 0;
+            border-right: 1px solid #d0d7de;
         }
         
         .line-content {
-            flex: 1;
+            padding: 0 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
-
+        
+        /* Diff coloring */
         .diff-removed {
             background-color: #ffebe9;
+        }
+        
+        .diff-removed .line-content {
             color: #82071e;
         }
-
+        
         .diff-added {
             background-color: #dafbe1;
+        }
+        
+        .diff-added .line-content {
             color: #1a7f37;
         }
-
+        
         .diff-unchanged {
             background-color: white;
-            color: #24292f;
+        }
+        
+        .diff-modified {
+            background-color: #faf7e6;
         }
 
         .diff-placeholder {
@@ -157,6 +219,7 @@
             background-color: #f6f8fa;
         }
 
+        /* Word-level diff highlights */
         .word-added, .char-added {
             background-color: #a0f0a0;
             color: #1a7f37;
@@ -186,8 +249,61 @@
             border-left: none;
         }
 
-        .diff-modified {
-            background-color: #faf7e6;
+        /* Markdown rendering styles - applied to rendered content only */
+        .markdown-rendered h1,
+        .markdown-rendered h2,
+        .markdown-rendered h3,
+        .markdown-rendered h4,
+        .markdown-rendered h5,
+        .markdown-rendered h6 {
+            font-weight: bold;
+            margin: 8px 0 4px 0;
+        }
+        
+        .markdown-rendered h1 { font-size: 1.8em; }
+        .markdown-rendered h2 { font-size: 1.5em; }
+        .markdown-rendered h3 { font-size: 1.3em; }
+        .markdown-rendered h4 { font-size: 1.1em; }
+        .markdown-rendered h5 { font-size: 1.0em; }
+        .markdown-rendered h6 { font-size: 0.9em; }
+        
+        .markdown-rendered strong {
+            font-weight: bold;
+        }
+        
+        .markdown-rendered em {
+            font-style: italic;
+        }
+        
+        .markdown-rendered code {
+            background-color: #f6f8fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+        
+        .markdown-rendered blockquote {
+            border-left: 4px solid #d0d7de;
+            padding-left: 12px;
+            margin: 8px 0;
+            font-style: italic;
+        }
+        
+        .markdown-rendered a {
+            color: #0969da;
+            text-decoration: underline;
+        }
+        
+        .markdown-rendered ul,
+        .markdown-rendered ol {
+            margin: 4px 0 4px 20px;
+        }
+        
+        .markdown-rendered hr {
+            border: none;
+            border-top: 1px solid #d0d7de;
+            margin: 12px 0;
         }
 
         .loading {
@@ -207,13 +323,8 @@
                 height: 200px;
             }
             
-            .diff-content {
-                flex-direction: column;
-            }
-            
-            .diff-left {
-                border-right: none;
-                border-bottom: 1px solid #d0d7de;
+            .diff-table {
+                font-size: 12px;
             }
         }
     </style>
@@ -245,14 +356,16 @@
         <div class="diff-container" id="diffContainer" style="display: none;">
             <div class="diff-header">
                 <span id="diffStats">Differences</span>
+                <div class="render-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="markdownToggle" class="toggle-checkbox">
+                        <span class="toggle-button"></span>
+                        <span class="toggle-text">Render as Markdown</span>
+                    </label>
+                </div>
             </div>
-            <div class="diff-content">
-                <div class="diff-side diff-left" id="diffLeft">
-                    <div class="diff-placeholder">Original draft will appear here</div>
-                </div>
-                <div class="diff-side diff-right" id="diffRight">
-                    <div class="diff-placeholder">Updated draft will appear here</div>
-                </div>
+            <div id="diffContent">
+                <div class="diff-placeholder">Differences will appear here</div>
             </div>
         </div>
     </div>
@@ -390,27 +503,79 @@
             };
         }
         
-        // Calculate similarity between two lines with special handling for lists
-        function calculateSimilarity(line1, line2) {
+        // Blog-specific content analysis
+        function analyzeContentStructure(line) {
+            const trimmed = line.trim();
+            return {
+                isHeader: /^#{1,6}\s/.test(trimmed),
+                headerLevel: (() => {
+                    const match = trimmed.match(/^(#{1,6})\s/);
+                    return match ? match[1].length : 0;
+                })(),
+                isList: /^\s*[\-\*\+]|\d+\.|\d+\)/.test(trimmed),
+                isBold: /\*\*[^*]+\*\*/.test(trimmed),
+                isItalic: /\*[^*]+\*(?!\*)/.test(trimmed),
+                isCode: /`[^`]+`/.test(trimmed) || /```/.test(trimmed),
+                isQuote: /^>\s/.test(trimmed),
+                hasLinks: /\[.*\]\(.*\)/.test(trimmed),
+                isHorizontalRule: /^[-*_]{3,}$/.test(trimmed),
+                // Blog-specific patterns
+                isMetric: /\d+%|\$[\d,]+|CTR|CPC|ROAS|CPM|CPA/i.test(trimmed),
+                isConclusion: /verdict|conclusion|takeaway|summary|findings|results/i.test(trimmed),
+                isMethodology: /method|data|prompt|model|approach|experiment/i.test(trimmed),
+                isCallout: /\*\*[^*]+:\*\*/.test(trimmed), // **Label:** pattern
+                hasEmphasis: /\*\*[^*]+\*\*|\*[^*]+\*(?!\*)/g.test(trimmed),
+                // Structure analysis
+                isEmpty: trimmed.length === 0,
+                isImageRef: /!\[.*\]\(.*\)/.test(trimmed)
+            };
+        }
+        
+        // Calculate enhanced similarity with blog-specific rules
+        function calculateBlogSimilarity(line1, line2) {
             if (!line1 || !line2) return 0;
             
-            // Normalize lines by removing extra whitespace
-            let norm1 = line1.trim().replace(/\s+/g, ' ');
-            let norm2 = line2.trim().replace(/\s+/g, ' ');
+            const struct1 = analyzeContentStructure(line1);
+            const struct2 = analyzeContentStructure(line2);
             
-            // Special handling for list items - remove list markers before comparison
-            const listMarkers1 = norm1.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
-            const listMarkers2 = norm2.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
+            // High penalty for different structures
+            if (struct1.isHeader !== struct2.isHeader) return 0;
+            if (struct1.isHeader && struct1.headerLevel !== struct2.headerLevel) return 0.1;
+            if (struct1.isList !== struct2.isList) return 0.1;
+            if (struct1.isCode !== struct2.isCode) return 0.1;
+            if (struct1.isQuote !== struct2.isQuote) return 0.1;
             
-            if (listMarkers1 && listMarkers2) {
-                // Both are list items, compare without the markers
-                norm1 = norm1.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
-                norm2 = norm2.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
-            }
+            // Normalize content by removing markdown syntax for comparison
+            let norm1 = line1.trim()
+                .replace(/^#{1,6}\s/, '') // Remove header markers
+                .replace(/^\s*[\-\*\+]|\d+\.|\d+\)\s?/, '') // Remove list markers
+                .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+                .replace(/\*([^*]+)\*/g, '$1') // Remove italic
+                .replace(/`([^`]+)`/g, '$1') // Remove inline code
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Extract link text
+                .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1') // Extract alt text
+                .replace(/\s+/g, ' ');
+                
+            let norm2 = line2.trim()
+                .replace(/^#{1,6}\s/, '')
+                .replace(/^\s*[\-\*\+]|\d+\.|\d+\)\s?/, '')
+                .replace(/\*\*([^*]+)\*\*/g, '$1')
+                .replace(/\*([^*]+)\*/g, '$1')
+                .replace(/`([^`]+)`/g, '$1')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+                .replace(/\s+/g, ' ');
             
             if (norm1 === norm2) return 1;
+            if (!norm1 || !norm2) return 0;
             
-            // Use Levenshtein distance for similarity
+            // Bonus for matching structure types
+            let structureBonus = 0;
+            if (struct1.isMethodology && struct2.isMethodology) structureBonus += 0.1;
+            if (struct1.isConclusion && struct2.isConclusion) structureBonus += 0.1;
+            if (struct1.isMetric && struct2.isMetric) structureBonus += 0.05;
+            
+            // Calculate base similarity
             const len1 = norm1.length;
             const len2 = norm2.length;
             const dp = [];
@@ -429,15 +594,17 @@
                 for (let j = 1; j <= len2; j++) {
                     const cost = norm1[i-1] === norm2[j-1] ? 0 : 1;
                     dp[i][j] = Math.min(
-                        dp[i-1][j] + 1,    // deletion
-                        dp[i][j-1] + 1,    // insertion
-                        dp[i-1][j-1] + cost // substitution
+                        dp[i-1][j] + 1,
+                        dp[i][j-1] + 1,
+                        dp[i-1][j-1] + cost
                     );
                 }
             }
             
             const maxLen = Math.max(len1, len2);
-            return maxLen === 0 ? 1 : (maxLen - dp[len1][len2]) / maxLen;
+            const baseSimilarity = maxLen === 0 ? 1 : (maxLen - dp[len1][len2]) / maxLen;
+            
+            return Math.min(1, baseSimilarity + structureBonus);
         }
         
         // Join consecutive lines that might have been split
@@ -463,7 +630,7 @@
                     i++;
                 } else {
                     // Check if current lines are similar
-                    const similarity = calculateSimilarity(lines1[i], lines2[j]);
+                    const similarity = calculateBlogSimilarity(lines1[i], lines2[j]);
                     
                     if (similarity > 0.3) {
                         // Lines are similar enough
@@ -473,13 +640,13 @@
                         j++;
                     } else {
                         // Check if line1[i] matches line2[j+1] (line added)
-                        if (j + 1 < lines2.length && calculateSimilarity(lines1[i], lines2[j + 1]) > 0.7) {
+                        if (j + 1 < lines2.length && calculateBlogSimilarity(lines1[i], lines2[j + 1]) > 0.7) {
                             reconstructed1.push('');
                             reconstructed2.push(lines2[j]);
                             j++;
                         }
                         // Check if line1[i+1] matches line2[j] (line removed)
-                        else if (i + 1 < lines1.length && calculateSimilarity(lines1[i + 1], lines2[j]) > 0.7) {
+                        else if (i + 1 < lines1.length && calculateBlogSimilarity(lines1[i + 1], lines2[j]) > 0.7) {
                             reconstructed1.push(lines1[i]);
                             reconstructed2.push('');
                             i++;
@@ -487,7 +654,7 @@
                         // Check if lines might have been merged (line1[i] + line1[i+1] ≈ line2[j])
                         else if (i + 1 < lines1.length) {
                             const merged = lines1[i] + ' ' + lines1[i + 1];
-                            if (calculateSimilarity(merged, lines2[j]) > 0.7) {
+                            if (calculateBlogSimilarity(merged, lines2[j]) > 0.7) {
                                 reconstructed1.push(merged);
                                 reconstructed2.push(lines2[j]);
                                 i += 2;
@@ -498,7 +665,7 @@
                         // Check if line might have been split (line1[i] ≈ line2[j] + line2[j+1])
                         else if (j + 1 < lines2.length) {
                             const merged = lines2[j] + ' ' + lines2[j + 1];
-                            if (calculateSimilarity(lines1[i], merged) > 0.7) {
+                            if (calculateBlogSimilarity(lines1[i], merged) > 0.7) {
                                 reconstructed1.push(lines1[i]);
                                 reconstructed2.push(merged);
                                 i++;
@@ -558,7 +725,7 @@
             for (let k = 0; k < diff.length; k++) {
                 if (diff[k].type === 'removed' && k + 1 < diff.length && diff[k + 1].type === 'added') {
                     // Check if these lines are similar enough to be considered a modification
-                    const similarity = calculateSimilarity(diff[k].line1, diff[k + 1].line2);
+                    const similarity = calculateBlogSimilarity(diff[k].line1, diff[k + 1].line2);
                     
                     if (similarity > 0.3) {
                         // This is likely a modified line, compute word-level diff
@@ -586,13 +753,82 @@
             return processedDiff;
         }
         
-        function renderDiff(diff) {
-            const leftDiv = document.getElementById('diffLeft');
-            const rightDiv = document.getElementById('diffRight');
-            const statsDiv = document.getElementById('diffStats');
+        // Simple markdown renderer that safely handles HTML entities
+        function renderMarkdown(text) {
+            if (!text) return '';
             
-            leftDiv.innerHTML = '';
-            rightDiv.innerHTML = '';
+            // First, escape any existing HTML to prevent double-rendering
+            text = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            
+            return text
+                // Headers
+                .replace(/^(#{6})\s(.+)$/gm, '<h6>$2</h6>')
+                .replace(/^(#{5})\s(.+)$/gm, '<h5>$2</h5>')
+                .replace(/^(#{4})\s(.+)$/gm, '<h4>$2</h4>')
+                .replace(/^(#{3})\s(.+)$/gm, '<h3>$2</h3>')
+                .replace(/^(#{2})\s(.+)$/gm, '<h2>$2</h2>')
+                .replace(/^(#{1})\s(.+)$/gm, '<h1>$2</h1>')
+                // Bold and italic
+                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                // Code blocks - handle these before inline code
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                // Inline code
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                // Links
+                .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+                // Images
+                .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;">')
+                // Lists - basic support
+                .replace(/^\* (.+)$/gm, '<li>$1</li>')
+                .replace(/^- (.+)$/gm, '<li>$1</li>')
+                .replace(/^\+ (.+)$/gm, '<li>$1</li>')
+                .replace(/^(\d+)\. (.+)$/gm, '<li>$1. $2</li>')
+                // Quotes
+                .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+                // Horizontal rules
+                .replace(/^[-*_]{3,}$/gm, '<hr>');
+        }
+        
+        // Process content for display with or without markdown
+        function processContentForDisplay(content, isMarkdown, hasHighlights = false) {
+            if (!content) return '';
+            
+            // If we have highlights (word/char diffs), we need to preserve them
+            if (hasHighlights) {
+                if (isMarkdown) {
+                    // For markdown with highlights, we need to be more careful
+                    // Split by spans to preserve them while rendering markdown in between
+                    const parts = content.split(/(<span[^>]*>[^<]*<\/span>)/);
+                    return parts.map(part => {
+                        if (part.startsWith('<span')) {
+                            return part; // Keep spans as-is
+                        } else {
+                            return renderMarkdown(part);
+                        }
+                    }).join('');
+                } else {
+                    return content; // Return as-is with highlights
+                }
+            }
+            
+            // No highlights - safe to render markdown if requested
+            return isMarkdown ? renderMarkdown(content) : content;
+        }
+        
+        function renderDiff(diff) {
+            const diffContent = document.getElementById('diffContent');
+            const statsDiv = document.getElementById('diffStats');
+            const isMarkdown = document.getElementById('markdownToggle').checked;
+            
+            if (!diff || diff.length === 0) {
+                diffContent.innerHTML = '<div class="diff-placeholder">No differences found</div>';
+                return;
+            }
             
             let addedCount = 0;
             let removedCount = 0;
@@ -600,66 +836,116 @@
             let leftLineNum = 1;
             let rightLineNum = 1;
             
+            // Create table for proper alignment
+            const table = document.createElement('table');
+            table.className = 'diff-table';
+            
+            // Add header row
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'diff-header-row';
+            headerRow.innerHTML = `
+                <th class="diff-header-cell" colspan="2">Original</th>
+                <th class="diff-header-cell" colspan="2">Updated</th>
+            `;
+            table.appendChild(headerRow);
+            
             diff.forEach(item => {
-                const leftLine = document.createElement('div');
-                const rightLine = document.createElement('div');
+                const row = document.createElement('tr');
+                row.className = 'diff-row';
                 
-                leftLine.className = 'diff-line';
-                rightLine.className = 'diff-line';
+                // Create cells
+                const leftLineNumCell = document.createElement('td');
+                const leftContentCell = document.createElement('td');
+                const rightLineNumCell = document.createElement('td');
+                const rightContentCell = document.createElement('td');
                 
-                // Add line numbers and content containers
-                const leftNumSpan = document.createElement('span');
-                const rightNumSpan = document.createElement('span');
-                const leftContentSpan = document.createElement('span');
-                const rightContentSpan = document.createElement('span');
-                
-                leftNumSpan.className = 'line-number';
-                rightNumSpan.className = 'line-number';
-                leftContentSpan.className = 'line-content';
-                rightContentSpan.className = 'line-content';
-                
-                leftLine.appendChild(leftNumSpan);
-                leftLine.appendChild(leftContentSpan);
-                rightLine.appendChild(rightNumSpan);
-                rightLine.appendChild(rightContentSpan);
+                leftLineNumCell.className = 'diff-line-cell line-number';
+                leftContentCell.className = 'diff-line-cell line-content';
+                rightLineNumCell.className = 'diff-line-cell line-number';
+                rightContentCell.className = 'diff-line-cell line-content';
                 
                 if (item.type === 'unchanged') {
-                    leftLine.className += ' diff-unchanged';
-                    rightLine.className += ' diff-unchanged';
-                    leftNumSpan.textContent = leftLineNum++;
-                    rightNumSpan.textContent = rightLineNum++;
-                    leftContentSpan.textContent = item.line1;
-                    rightContentSpan.textContent = item.line2;
+                    leftLineNumCell.textContent = leftLineNum++;
+                    rightLineNumCell.textContent = rightLineNum++;
+                    
+                    leftContentCell.innerHTML = processContentForDisplay(item.line1, isMarkdown);
+                    rightContentCell.innerHTML = processContentForDisplay(item.line2, isMarkdown);
+                    
+                    leftLineNumCell.classList.add('diff-unchanged');
+                    leftContentCell.classList.add('diff-unchanged');
+                    rightLineNumCell.classList.add('diff-unchanged');
+                    rightContentCell.classList.add('diff-unchanged');
+                    
+                    if (isMarkdown) {
+                        leftContentCell.classList.add('markdown-rendered');
+                        rightContentCell.classList.add('markdown-rendered');
+                    }
                 } else if (item.type === 'removed') {
-                    leftLine.className += ' diff-removed';
-                    rightLine.className += ' diff-unchanged';
-                    leftNumSpan.textContent = leftLineNum++;
-                    rightNumSpan.innerHTML = '&nbsp;';
-                    leftContentSpan.textContent = item.line1;
-                    rightContentSpan.innerHTML = '&nbsp;';
+                    leftLineNumCell.textContent = leftLineNum++;
+                    rightLineNumCell.innerHTML = '&nbsp;';
+                    
+                    leftContentCell.innerHTML = processContentForDisplay(item.line1, isMarkdown);
+                    rightContentCell.innerHTML = '&nbsp;';
+                    
+                    leftLineNumCell.classList.add('diff-removed');
+                    leftContentCell.classList.add('diff-removed');
+                    rightLineNumCell.classList.add('diff-unchanged');
+                    rightContentCell.classList.add('diff-unchanged');
+                    
+                    if (isMarkdown) {
+                        leftContentCell.classList.add('markdown-rendered');
+                    }
+                    
                     removedCount++;
                 } else if (item.type === 'added') {
-                    leftLine.className += ' diff-unchanged';
-                    rightLine.className += ' diff-added';
-                    leftNumSpan.innerHTML = '&nbsp;';
-                    rightNumSpan.textContent = rightLineNum++;
-                    leftContentSpan.innerHTML = '&nbsp;';
-                    rightContentSpan.textContent = item.line2;
+                    leftLineNumCell.innerHTML = '&nbsp;';
+                    rightLineNumCell.textContent = rightLineNum++;
+                    
+                    leftContentCell.innerHTML = '&nbsp;';
+                    rightContentCell.innerHTML = processContentForDisplay(item.line2, isMarkdown);
+                    
+                    leftLineNumCell.classList.add('diff-unchanged');
+                    leftContentCell.classList.add('diff-unchanged');
+                    rightLineNumCell.classList.add('diff-added');
+                    rightContentCell.classList.add('diff-added');
+                    
+                    if (isMarkdown) {
+                        rightContentCell.classList.add('markdown-rendered');
+                    }
+                    
                     addedCount++;
                 } else if (item.type === 'modified') {
-                    leftLine.className += ' diff-modified';
-                    rightLine.className += ' diff-modified';
-                    leftNumSpan.textContent = leftLineNum++;
-                    rightNumSpan.textContent = rightLineNum++;
-                    leftContentSpan.innerHTML = item.leftDiff;
-                    rightContentSpan.innerHTML = item.rightDiff;
+                    leftLineNumCell.textContent = leftLineNum++;
+                    rightLineNumCell.textContent = rightLineNum++;
+                    
+                    // For modified lines, always show word-level differences
+                    leftContentCell.innerHTML = processContentForDisplay(item.leftDiff, isMarkdown, true);
+                    rightContentCell.innerHTML = processContentForDisplay(item.rightDiff, isMarkdown, true);
+                    
+                    leftLineNumCell.classList.add('diff-modified');
+                    leftContentCell.classList.add('diff-modified');
+                    rightLineNumCell.classList.add('diff-modified');
+                    rightContentCell.classList.add('diff-modified');
+                    
+                    if (isMarkdown) {
+                        leftContentCell.classList.add('markdown-rendered');
+                        rightContentCell.classList.add('markdown-rendered');
+                    }
+                    
                     modifiedCount++;
                 }
                 
-                leftDiv.appendChild(leftLine);
-                rightDiv.appendChild(rightLine);
+                row.appendChild(leftLineNumCell);
+                row.appendChild(leftContentCell);
+                row.appendChild(rightLineNumCell);
+                row.appendChild(rightContentCell);
+                table.appendChild(row);
             });
             
+            diffContent.innerHTML = '';
+            diffContent.appendChild(table);
+            
+            // Update stats
             let statsText = '';
             if (addedCount > 0) statsText += `${addedCount} additions`;
             if (removedCount > 0) {
@@ -688,30 +974,22 @@
             diffContainer.style.display = 'block';
             
             if (!draft1 || !draft2) {
-                const leftDiv = document.getElementById('diffLeft');
-                const rightDiv = document.getElementById('diffRight');
+                const diffContent = document.getElementById('diffContent');
+                const isMarkdown = document.getElementById('markdownToggle').checked;
                 
-                if (!draft1) {
-                    leftDiv.innerHTML = '<div class="diff-placeholder">Please paste your original draft</div>';
+                // Show placeholder for missing content
+                if (!draft1 && !draft2) {
+                    diffContent.innerHTML = '<div class="diff-placeholder">Please paste both drafts to see differences</div>';
+                } else if (!draft1) {
+                    diffContent.innerHTML = '<div class="diff-placeholder">Please paste your original draft</div>';
                 } else {
-                    leftDiv.innerHTML = draft1.split('\n').map(line => 
-                        `<div class="diff-line diff-removed">${line || ' '}</div>`
-                    ).join('');
-                }
-                
-                if (!draft2) {
-                    rightDiv.innerHTML = '<div class="diff-placeholder">Please paste your updated draft</div>';
-                } else {
-                    rightDiv.innerHTML = draft2.split('\n').map(line => 
-                        `<div class="diff-line diff-added">${line || ' '}</div>`
-                    ).join('');
+                    diffContent.innerHTML = '<div class="diff-placeholder">Please paste your updated draft</div>';
                 }
                 return;
             }
             
             // Show loading state briefly
-            document.getElementById('diffLeft').innerHTML = '<div class="loading">Computing differences...</div>';
-            document.getElementById('diffRight').innerHTML = '<div class="loading">Computing differences...</div>';
+            document.getElementById('diffContent').innerHTML = '<div class="loading">Computing differences...</div>';
             
             // Compute diff with a small delay to show loading state
             setTimeout(() => {
@@ -723,6 +1001,9 @@
         // Add event listeners
         document.getElementById('draft1').addEventListener('blur', updateDiff);
         document.getElementById('draft2').addEventListener('blur', updateDiff);
+        
+        // Add markdown toggle listener
+        document.getElementById('markdownToggle').addEventListener('change', updateDiff);
         
         // Also update on input for better UX (with debouncing)
         let timeoutId;
