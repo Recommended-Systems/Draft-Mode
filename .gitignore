@@ -1,1 +1,2 @@
 .DS_Store
+/flask-app/__pycache__

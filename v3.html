@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Post Diff Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f6f8fa;
+            color: #24292f;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #24292f;
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            height: 400px;
+        }
+
+        .input-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .input-field {
+            width: 100%;
+            height: 100%;
+            padding: 16px;
+            border: 2px solid #d0d7de;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            background-color: white;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #0969da;
+        }
+
+        .diff-container {
+            margin-top: 40px;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .diff-header {
+            background-color: #f6f8fa;
+            padding: 10px 16px;
+            border-bottom: 1px solid #d0d7de;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .diff-content {
+            display: flex;
+            min-height: 400px;
+            position: relative;
+        }
+        
+        .diff-content::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #d0d7de;
+        }
+        
+        .diff-side {
+            flex: 1;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .diff-line {
+            padding: 4px 16px;
+            font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .line-number {
+            min-width: 40px;
+            padding-right: 8px;
+            color: #656d76;
+            font-size: 11px;
+            text-align: right;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        
+        .line-content {
+            flex: 1;
+        }
+
+        .diff-removed {
+            background-color: #ffebe9;
+            color: #82071e;
+        }
+
+        .diff-added {
+            background-color: #dafbe1;
+            color: #1a7f37;
+        }
+
+        .diff-unchanged {
+            background-color: white;
+            color: #24292f;
+        }
+
+        .diff-placeholder {
+            text-align: center;
+            color: #656d76;
+            font-style: italic;
+            padding: 40px 20px;
+            background-color: #f6f8fa;
+        }
+
+        .word-added, .char-added {
+            background-color: #a0f0a0;
+            color: #1a7f37;
+            padding: 1px 2px;
+            border-radius: 3px;
+            border: 1px solid #66d066;
+        }
+
+        .word-removed, .char-removed {
+            background-color: #f0a0a0;
+            color: #82071e;
+            padding: 1px 2px;
+            border-radius: 3px;
+            border: 1px solid #d06666;
+        }
+        
+        /* Better spacing for inline changes */
+        .word-added + .word-added,
+        .char-added + .char-added {
+            margin-left: -1px;
+            border-left: none;
+        }
+        
+        .word-removed + .word-removed,
+        .char-removed + .char-removed {
+            margin-left: -1px;
+            border-left: none;
+        }
+
+        .diff-modified {
+            background-color: #faf7e6;
+        }
+
+        .loading {
+            text-align: center;
+            color: #656d76;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .input-section {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .input-field {
+                height: 200px;
+            }
+            
+            .diff-content {
+                flex-direction: column;
+            }
+            
+            .diff-left {
+                border-right: none;
+                border-bottom: 1px solid #d0d7de;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Blog Post Diff Tool</h1>
+        
+        <div class="input-section">
+            <div class="input-container">
+                <label class="input-label" for="draft1">Original Draft</label>
+                <textarea 
+                    id="draft1" 
+                    class="input-field" 
+                    placeholder="Paste your original blog post draft here..."
+                ></textarea>
+            </div>
+            
+            <div class="input-container">
+                <label class="input-label" for="draft2">Updated Draft</label>
+                <textarea 
+                    id="draft2" 
+                    class="input-field" 
+                    placeholder="Paste your updated blog post draft here..."
+                ></textarea>
+            </div>
+        </div>
+        
+        <div class="diff-container" id="diffContainer" style="display: none;">
+            <div class="diff-header">
+                <span id="diffStats">Differences</span>
+            </div>
+            <div class="diff-content">
+                <div class="diff-side diff-left" id="diffLeft">
+                    <div class="diff-placeholder">Original draft will appear here</div>
+                </div>
+                <div class="diff-side diff-right" id="diffRight">
+                    <div class="diff-placeholder">Updated draft will appear here</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Compute word-level differences within a line, returning separate left and right views
+        function computeWordDiffSeparate(line1, line2) {
+            if (!line1 && !line2) return { left: '', right: '' };
+            if (!line1) return { left: '', right: `<span class="word-added">${line2}</span>` };
+            if (!line2) return { left: `<span class="word-removed">${line1}</span>`, right: '' };
+            
+            // Split into words but preserve whitespace
+            const words1 = line1.split(/(\s+)/);
+            const words2 = line2.split(/(\s+)/);
+            
+            // If lines are identical, return as is
+            if (line1 === line2) return { left: line1, right: line2 };
+            
+            // Use character-level diff for short lines or very different lines
+            if (words1.length < 3 || words2.length < 3 || 
+                Math.abs(words1.length - words2.length) > Math.max(words1.length, words2.length) * 0.5) {
+                return computeCharDiffSeparate(line1, line2);
+            }
+            
+            // Compute word-level diff using LCS
+            const dp = [];
+            for (let i = 0; i <= words1.length; i++) {
+                dp[i] = [];
+                for (let j = 0; j <= words2.length; j++) {
+                    if (i === 0) dp[i][j] = j;
+                    else if (j === 0) dp[i][j] = i;
+                    else if (words1[i-1] === words2[j-1]) dp[i][j] = dp[i-1][j-1];
+                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+                }
+            }
+            
+            // Backtrack to find the word diff, creating separate left and right views
+            let leftResult = '';
+            let rightResult = '';
+            let i = words1.length, j = words2.length;
+            
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && words1[i-1] === words2[j-1]) {
+                    leftResult = words1[i-1] + leftResult;
+                    rightResult = words2[j-1] + rightResult;
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                    rightResult = `<span class="word-added">${words2[j-1]}</span>` + rightResult;
+                    j--;
+                } else if (i > 0) {
+                    leftResult = `<span class="word-removed">${words1[i-1]}</span>` + leftResult;
+                    i--;
+                }
+            }
+            
+            return { left: leftResult, right: rightResult };
+        }
+        
+        // Compute character-level differences within a line, returning separate left and right views
+        function computeCharDiffSeparate(line1, line2) {
+            const dp = [];
+            const len1 = line1.length;
+            const len2 = line2.length;
+            
+            // Initialize DP table
+            for (let i = 0; i <= len1; i++) {
+                dp[i] = [];
+                for (let j = 0; j <= len2; j++) {
+                    if (i === 0) dp[i][j] = j;
+                    else if (j === 0) dp[i][j] = i;
+                    else if (line1[i-1] === line2[j-1]) dp[i][j] = dp[i-1][j-1];
+                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+                }
+            }
+            
+            // Backtrack to find character diff, creating separate left and right views
+            const leftParts = [];
+            const rightParts = [];
+            let i = len1, j = len2;
+            
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && line1[i-1] === line2[j-1]) {
+                    leftParts.unshift({type: 'unchanged', char: line1[i-1]});
+                    rightParts.unshift({type: 'unchanged', char: line2[j-1]});
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                    rightParts.unshift({type: 'added', char: line2[j-1]});
+                    j--;
+                } else if (i > 0) {
+                    leftParts.unshift({type: 'removed', char: line1[i-1]});
+                    i--;
+                }
+            }
+            
+            // Combine consecutive changes into blocks
+            const combineChanges = (parts) => {
+                let result = '';
+                let currentBlock = null;
+                
+                for (const part of parts) {
+                    if (currentBlock && currentBlock.type === part.type) {
+                        // Extend current block
+                        currentBlock.text += part.char;
+                    } else {
+                        // Finish previous block
+                        if (currentBlock) {
+                            if (currentBlock.type === 'unchanged') {
+                                result += currentBlock.text;
+                            } else {
+                                const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
+                                result += `<span class="${spanClass}">${currentBlock.text}</span>`;
+                            }
+                        }
+                        // Start new block
+                        currentBlock = {type: part.type, text: part.char};
+                    }
+                }
+                
+                // Finish final block
+                if (currentBlock) {
+                    if (currentBlock.type === 'unchanged') {
+                        result += currentBlock.text;
+                    } else {
+                        const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
+                        result += `<span class="${spanClass}">${currentBlock.text}</span>`;
+                    }
+                }
+                
+                return result;
+            };
+            
+            return { 
+                left: combineChanges(leftParts), 
+                right: combineChanges(rightParts) 
+            };
+        }
+        
+        // Calculate similarity between two lines with special handling for lists
+        function calculateSimilarity(line1, line2) {
+            if (!line1 || !line2) return 0;
+            
+            // Normalize lines by removing extra whitespace
+            let norm1 = line1.trim().replace(/\s+/g, ' ');
+            let norm2 = line2.trim().replace(/\s+/g, ' ');
+            
+            // Special handling for list items - remove list markers before comparison
+            const listMarkers1 = norm1.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
+            const listMarkers2 = norm2.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
+            
+            if (listMarkers1 && listMarkers2) {
+                // Both are list items, compare without the markers
+                norm1 = norm1.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
+                norm2 = norm2.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
+            }
+            
+            if (norm1 === norm2) return 1;
+            
+            // Use Levenshtein distance for similarity
+            const len1 = norm1.length;
+            const len2 = norm2.length;
+            const dp = [];
+            
+            for (let i = 0; i <= len1; i++) {
+                dp[i] = [i];
+                for (let j = 1; j <= len2; j++) {
+                    dp[i][j] = 0;
+                }
+            }
+            for (let j = 0; j <= len2; j++) {
+                dp[0][j] = j;
+            }
+            
+            for (let i = 1; i <= len1; i++) {
+                for (let j = 1; j <= len2; j++) {
+                    const cost = norm1[i-1] === norm2[j-1] ? 0 : 1;
+                    dp[i][j] = Math.min(
+                        dp[i-1][j] + 1,    // deletion
+                        dp[i][j-1] + 1,    // insertion
+                        dp[i-1][j-1] + cost // substitution
+                    );
+                }
+            }
+            
+            const maxLen = Math.max(len1, len2);
+            return maxLen === 0 ? 1 : (maxLen - dp[len1][len2]) / maxLen;
+        }
+        
+        // Join consecutive lines that might have been split
+        function reconstructLines(text1, text2) {
+            const lines1 = text1.split('\n');
+            const lines2 = text2.split('\n');
+            
+            // Look for cases where lines might have been merged or split
+            const reconstructed1 = [];
+            const reconstructed2 = [];
+            
+            let i = 0, j = 0;
+            while (i < lines1.length || j < lines2.length) {
+                if (i >= lines1.length) {
+                    // Remaining lines in second text
+                    reconstructed1.push('');
+                    reconstructed2.push(lines2[j]);
+                    j++;
+                } else if (j >= lines2.length) {
+                    // Remaining lines in first text
+                    reconstructed1.push(lines1[i]);
+                    reconstructed2.push('');
+                    i++;
+                } else {
+                    // Check if current lines are similar
+                    const similarity = calculateSimilarity(lines1[i], lines2[j]);
+                    
+                    if (similarity > 0.3) {
+                        // Lines are similar enough
+                        reconstructed1.push(lines1[i]);
+                        reconstructed2.push(lines2[j]);
+                        i++;
+                        j++;
+                    } else {
+                        // Check if line1[i] matches line2[j+1] (line added)
+                        if (j + 1 < lines2.length && calculateSimilarity(lines1[i], lines2[j + 1]) > 0.7) {
+                            reconstructed1.push('');
+                            reconstructed2.push(lines2[j]);
+                            j++;
+                        }
+                        // Check if line1[i+1] matches line2[j] (line removed)
+                        else if (i + 1 < lines1.length && calculateSimilarity(lines1[i + 1], lines2[j]) > 0.7) {
+                            reconstructed1.push(lines1[i]);
+                            reconstructed2.push('');
+                            i++;
+                        }
+                        // Check if lines might have been merged (line1[i] + line1[i+1] ≈ line2[j])
+                        else if (i + 1 < lines1.length) {
+                            const merged = lines1[i] + ' ' + lines1[i + 1];
+                            if (calculateSimilarity(merged, lines2[j]) > 0.7) {
+                                reconstructed1.push(merged);
+                                reconstructed2.push(lines2[j]);
+                                i += 2;
+                                j++;
+                                continue;
+                            }
+                        }
+                        // Check if line might have been split (line1[i] ≈ line2[j] + line2[j+1])
+                        else if (j + 1 < lines2.length) {
+                            const merged = lines2[j] + ' ' + lines2[j + 1];
+                            if (calculateSimilarity(lines1[i], merged) > 0.7) {
+                                reconstructed1.push(lines1[i]);
+                                reconstructed2.push(merged);
+                                i++;
+                                j += 2;
+                                continue;
+                            }
+                        }
+                        
+                        // Default case: lines are different
+                        reconstructed1.push(lines1[i]);
+                        reconstructed2.push(lines2[j]);
+                        i++;
+                        j++;
+                    }
+                }
+            }
+            
+            return [reconstructed1, reconstructed2];
+        }
+        
+        // Line-level diff algorithm with improved line matching
+        function computeDiff(text1, text2) {
+            // First, try to reconstruct lines that might have been split/merged
+            const [lines1, lines2] = reconstructLines(text1, text2);
+            
+            // Compute line-level diff using dynamic programming
+            const dp = [];
+            for (let i = 0; i <= lines1.length; i++) {
+                dp[i] = [];
+                for (let j = 0; j <= lines2.length; j++) {
+                    if (i === 0) dp[i][j] = j;
+                    else if (j === 0) dp[i][j] = i;
+                    else if (lines1[i-1] === lines2[j-1]) dp[i][j] = dp[i-1][j-1];
+                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+                }
+            }
+            
+            // Backtrack to find the actual diff
+            const diff = [];
+            let i = lines1.length, j = lines2.length;
+            
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && lines1[i-1] === lines2[j-1]) {
+                    diff.unshift({type: 'unchanged', line1: lines1[i-1], line2: lines2[j-1]});
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                    diff.unshift({type: 'added', line1: '', line2: lines2[j-1]});
+                    j--;
+                } else if (i > 0) {
+                    diff.unshift({type: 'removed', line1: lines1[i-1], line2: ''});
+                    i--;
+                }
+            }
+            
+            // Post-process to identify modified lines and compute word/char diffs
+            const processedDiff = [];
+            for (let k = 0; k < diff.length; k++) {
+                if (diff[k].type === 'removed' && k + 1 < diff.length && diff[k + 1].type === 'added') {
+                    // Check if these lines are similar enough to be considered a modification
+                    const similarity = calculateSimilarity(diff[k].line1, diff[k + 1].line2);
+                    
+                    if (similarity > 0.3) {
+                        // This is likely a modified line, compute word-level diff
+                        const line1 = diff[k].line1;
+                        const line2 = diff[k + 1].line2;
+                        const wordDiff = computeWordDiffSeparate(line1, line2);
+                        
+                        processedDiff.push({
+                            type: 'modified',
+                            line1: line1,
+                            line2: line2,
+                            leftDiff: wordDiff.left,
+                            rightDiff: wordDiff.right
+                        });
+                        k++; // Skip the next item since we've processed it
+                    } else {
+                        // Lines are too different, treat as separate removal and addition
+                        processedDiff.push(diff[k]);
+                    }
+                } else {
+                    processedDiff.push(diff[k]);
+                }
+            }
+            
+            return processedDiff;
+        }
+        
+        function renderDiff(diff) {
+            const leftDiv = document.getElementById('diffLeft');
+            const rightDiv = document.getElementById('diffRight');
+            const statsDiv = document.getElementById('diffStats');
+            
+            leftDiv.innerHTML = '';
+            rightDiv.innerHTML = '';
+            
+            let addedCount = 0;
+            let removedCount = 0;
+            let modifiedCount = 0;
+            let leftLineNum = 1;
+            let rightLineNum = 1;
+            
+            diff.forEach(item => {
+                const leftLine = document.createElement('div');
+                const rightLine = document.createElement('div');
+                
+                leftLine.className = 'diff-line';
+                rightLine.className = 'diff-line';
+                
+                // Add line numbers and content containers
+                const leftNumSpan = document.createElement('span');
+                const rightNumSpan = document.createElement('span');
+                const leftContentSpan = document.createElement('span');
+                const rightContentSpan = document.createElement('span');
+                
+                leftNumSpan.className = 'line-number';
+                rightNumSpan.className = 'line-number';
+                leftContentSpan.className = 'line-content';
+                rightContentSpan.className = 'line-content';
+                
+                leftLine.appendChild(leftNumSpan);
+                leftLine.appendChild(leftContentSpan);
+                rightLine.appendChild(rightNumSpan);
+                rightLine.appendChild(rightContentSpan);
+                
+                if (item.type === 'unchanged') {
+                    leftLine.className += ' diff-unchanged';
+                    rightLine.className += ' diff-unchanged';
+                    leftNumSpan.textContent = leftLineNum++;
+                    rightNumSpan.textContent = rightLineNum++;
+                    leftContentSpan.textContent = item.line1;
+                    rightContentSpan.textContent = item.line2;
+                } else if (item.type === 'removed') {
+                    leftLine.className += ' diff-removed';
+                    rightLine.className += ' diff-unchanged';
+                    leftNumSpan.textContent = leftLineNum++;
+                    rightNumSpan.innerHTML = '&nbsp;';
+                    leftContentSpan.textContent = item.line1;
+                    rightContentSpan.innerHTML = '&nbsp;';
+                    removedCount++;
+                } else if (item.type === 'added') {
+                    leftLine.className += ' diff-unchanged';
+                    rightLine.className += ' diff-added';
+                    leftNumSpan.innerHTML = '&nbsp;';
+                    rightNumSpan.textContent = rightLineNum++;
+                    leftContentSpan.innerHTML = '&nbsp;';
+                    rightContentSpan.textContent = item.line2;
+                    addedCount++;
+                } else if (item.type === 'modified') {
+                    leftLine.className += ' diff-modified';
+                    rightLine.className += ' diff-modified';
+                    leftNumSpan.textContent = leftLineNum++;
+                    rightNumSpan.textContent = rightLineNum++;
+                    leftContentSpan.innerHTML = item.leftDiff;
+                    rightContentSpan.innerHTML = item.rightDiff;
+                    modifiedCount++;
+                }
+                
+                leftDiv.appendChild(leftLine);
+                rightDiv.appendChild(rightLine);
+            });
+            
+            let statsText = '';
+            if (addedCount > 0) statsText += `${addedCount} additions`;
+            if (removedCount > 0) {
+                if (statsText) statsText += ', ';
+                statsText += `${removedCount} deletions`;
+            }
+            if (modifiedCount > 0) {
+                if (statsText) statsText += ', ';
+                statsText += `${modifiedCount} modifications`;
+            }
+            if (!statsText) statsText = 'No changes';
+            
+            statsDiv.textContent = statsText;
+        }
+        
+        function updateDiff() {
+            const draft1 = document.getElementById('draft1').value.trim();
+            const draft2 = document.getElementById('draft2').value.trim();
+            const diffContainer = document.getElementById('diffContainer');
+            
+            if (!draft1 && !draft2) {
+                diffContainer.style.display = 'none';
+                return;
+            }
+            
+            diffContainer.style.display = 'block';
+            
+            if (!draft1 || !draft2) {
+                const leftDiv = document.getElementById('diffLeft');
+                const rightDiv = document.getElementById('diffRight');
+                
+                if (!draft1) {
+                    leftDiv.innerHTML = '<div class="diff-placeholder">Please paste your original draft</div>';
+                } else {
+                    leftDiv.innerHTML = draft1.split('\n').map(line => 
+                        `<div class="diff-line diff-removed">${line || ' '}</div>`
+                    ).join('');
+                }
+                
+                if (!draft2) {
+                    rightDiv.innerHTML = '<div class="diff-placeholder">Please paste your updated draft</div>';
+                } else {
+                    rightDiv.innerHTML = draft2.split('\n').map(line => 
+                        `<div class="diff-line diff-added">${line || ' '}</div>`
+                    ).join('');
+                }
+                return;
+            }
+            
+            // Show loading state briefly
+            document.getElementById('diffLeft').innerHTML = '<div class="loading">Computing differences...</div>';
+            document.getElementById('diffRight').innerHTML = '<div class="loading">Computing differences...</div>';
+            
+            // Compute diff with a small delay to show loading state
+            setTimeout(() => {
+                const diff = computeDiff(draft1, draft2);
+                renderDiff(diff);
+            }, 100);
+        }
+        
+        // Add event listeners
+        document.getElementById('draft1').addEventListener('blur', updateDiff);
+        document.getElementById('draft2').addEventListener('blur', updateDiff);
+        
+        // Also update on input for better UX (with debouncing)
+        let timeoutId;
+        function debouncedUpdate() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(updateDiff, 1000);
+        }
+        
+        document.getElementById('draft1').addEventListener('input', debouncedUpdate);
+        document.getElementById('draft2').addEventListener('input', debouncedUpdate);
+    </script>
+</body>
+</html>

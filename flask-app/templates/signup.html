@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block window_title %}Sign Up - Draft Mode{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 0 auto;">
+    <h2 style="margin-bottom: 20px;">Create Account</h2>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button type="submit" class="btn primary">Create Account</button>
+            <a href="{{ url_for('login') }}" class="btn">Already have an account?</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

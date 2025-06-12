@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block window_title %}Dashboard - Draft Mode{% endblock %}
+
+{% block breadcrumb %}
+<div style="font-size: 10px; color: var(--text-medium); text-transform: uppercase; letter-spacing: 0.3px;">
+    Welcome back, {{ user.name }}!
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Your Blog Drafts</h2>
+    <div>
+        <a href="{{ url_for('create_draft') }}" class="btn primary">New Draft</a>
+        <a href="{{ url_for('logout') }}" class="btn">Logout</a>
+    </div>
+</div>
+
+{% if drafts %}
+    <div style="display: grid; gap: 16px;">
+        {% for draft in drafts %}
+        <div style="background: var(--mac-cream); border: 2px solid var(--mac-shadow); padding: 16px;">
+            <h3 style="margin-bottom: 8px;">{{ draft.title }}</h3>
+            {% if draft.description %}
+                <p style="color: var(--text-medium); margin-bottom: 12px;">{{ draft.description }}</p>
+            {% endif %}
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-light);">
+                <span>{{ draft.versions|length }} version(s) • Updated {{ draft.updated_at.strftime('%m/%d/%Y') }}</span>
+                <a href="{{ url_for('edit_draft', draft_id=draft.id) }}" class="btn">Edit</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div style="text-align: center; padding: 40px; color: var(--text-medium);">
+        <p>No drafts yet. Ready to start writing?</p>
+        <a href="{{ url_for('create_draft') }}" class="btn primary" style="margin-top: 16px;">Create Your First Draft</a>
+    </div>
+{% endif %}
+{% endblock %}

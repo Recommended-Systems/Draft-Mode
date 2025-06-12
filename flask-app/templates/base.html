@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Draft Mode{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mac-cream: #f7f4e8;
+            --mac-gray: #d4d1c4;
+            --mac-dark-gray: #8a8572;
+            --mac-light-gray: #e8e6db;
+            --mac-shadow: #3a362a;
+            --mac-black: #1a1810;
+            --accent-sage: #6b7c54;
+            --accent-rust: #a8634f;
+            --accent-amber: #c49060;
+            --text-dark: #2a2418;
+            --text-medium: #5c5843;
+            --text-light: #8a8572;
+            --dither-pattern: url("data:image/svg+xml,%3Csvg width='2' height='2' viewBox='0 0 2 2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0 L1,1 M1,0 L2,1' stroke='%238a8572' stroke-width='0.3' fill='none' opacity='0.4'/%3E%3C/svg%3E");
+            --scan-lines: url("data:image/svg+xml,%3Csvg width='100%25' height='2' viewBox='0 0 100 2' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='1' x2='100' y2='1' stroke='%23000' stroke-width='0.5' opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--mac-cream);
+            background-image: var(--dither-pattern), var(--scan-lines);
+            background-size: 8px 8px, 100% 2px;
+            min-height: 100vh;
+            color: var(--text-dark);
+            line-height: 1.4;
+        }
+
+        .window {
+            background: var(--mac-gray);
+            border: 3px solid var(--mac-shadow);
+            border-top-color: var(--mac-cream);
+            border-left-color: var(--mac-cream);
+            border-right-color: var(--mac-shadow);
+            border-bottom-color: var(--mac-shadow);
+            margin: 20px;
+            min-height: calc(100vh - 40px);
+            position: relative;
+            box-shadow: 4px 4px 8px rgba(26, 24, 16, 0.3);
+        }
+
+        .title-bar {
+            background: linear-gradient(to bottom, var(--mac-light-gray), var(--mac-gray));
+            border-bottom: 2px solid var(--mac-shadow);
+            height: 28px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            position: relative;
+            background-image: var(--dither-pattern);
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 6px;
+        }
+
+        .traffic-light {
+            width: 10px;
+            height: 10px;
+            border: 2px solid var(--mac-shadow);
+            border-top-color: var(--mac-cream);
+            border-left-color: var(--mac-cream);
+            cursor: pointer;
+        }
+
+        .traffic-light.close { background: var(--accent-rust); }
+        .traffic-light.minimize { background: var(--accent-amber); }
+        .traffic-light.maximize { background: var(--accent-sage); }
+
+        .window-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 600;
+            font-size: 11px;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header {
+            padding: 20px 24px;
+            background: var(--mac-gray);
+            border-bottom: 2px solid var(--mac-shadow);
+            background-image: var(--dither-pattern);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            background: var(--accent-sage);
+            border: 3px solid var(--mac-shadow);
+            border-top-color: var(--mac-cream);
+            border-left-color: var(--mac-cream);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--mac-cream);
+            font-size: 16px;
+            position: relative;
+            box-shadow: inset 1px 1px 0 rgba(247, 244, 232, 0.3);
+        }
+
+        .app-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-dark);
+            text-shadow: 1px 1px 0 var(--mac-cream);
+        }
+
+        .content {
+            padding: 24px;
+            background: var(--mac-light-gray);
+            min-height: 400px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 3px solid var(--mac-shadow);
+            border-top-color: var(--mac-cream);
+            border-left-color: var(--mac-cream);
+            background: var(--mac-light-gray);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: var(--mac-cream);
+        }
+
+        .btn:active {
+            border-top-color: var(--mac-shadow);
+            border-left-color: var(--mac-shadow);
+            border-right-color: var(--mac-cream);
+            border-bottom-color: var(--mac-cream);
+        }
+
+        .btn.primary {
+            background: var(--accent-sage);
+            color: var(--mac-cream);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 3px inset var(--mac-gray);
+            border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
+            background: var(--mac-cream);
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .flash-messages {
+            margin-bottom: 16px;
+        }
+
+        .flash {
+            padding: 8px 12px;
+            background: var(--accent-rust);
+            color: var(--mac-cream);
+            border: 2px solid var(--mac-shadow);
+            margin-bottom: 8px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="window">
+        <div class="title-bar">
+            <div class="traffic-lights">
+                <div class="traffic-light close"></div>
+                <div class="traffic-light minimize"></div>
+                <div class="traffic-light maximize"></div>
+            </div>
+            <div class="window-title">{% block window_title %}Draft Mode{% endblock %}</div>
+        </div>
+        
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo">D</div>
+                <div>
+                    <div class="app-name">Draft Mode</div>
+                    {% block breadcrumb %}{% endblock %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="flash">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

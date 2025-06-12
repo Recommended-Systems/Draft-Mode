@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center; padding: 40px 0;">
+    <h2 style="margin-bottom: 20px;">Welcome to Draft Mode</h2>
+    <p style="margin-bottom: 30px; color: var(--text-medium);">The retro way to manage your blog drafts</p>
+    <div>
+        <a href="{{ url_for('signup') }}" class="btn primary">Sign Up</a>
+        <a href="{{ url_for('login') }}" class="btn">Sign In</a>
+    </div>
+</div>
+{% endblock %}

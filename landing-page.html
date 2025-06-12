@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draft Mode</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            font-family: 'JetBrains Mono', monospace;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            filter: contrast(1.2) brightness(1.1);
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+            letter-spacing: 2px;
+            opacity: 0;
+            animation: fadeInSubtitle 1s ease-out 3s forwards;
+        }
+
+        @keyframes fadeInSubtitle {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .controls:hover {
+            opacity: 1;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-group label {
+            color: #888;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input[type="range"] {
+            width: 100px;
+            height: 2px;
+            background: #333;
+            outline: none;
+            border-radius: 1px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="textCanvas"></canvas>
+        <div class="subtitle">ENTERING CREATIVE WORKFLOW</div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Pixel Size</label>
+                <input type="range" id="pixelSize" min="2" max="20" value="11" step="1">
+            </div>
+            <div class="control-group">
+                <label>Distortion</label>
+                <input type="range" id="distortion" min="0.1" max="2" value="0.95" step="0.05">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DitheredText {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.text = 'DRAFT MODE';
+                this.fontSize = 80;
+                this.pixelSize = 15;
+                this.distortion = 0.3;
+                this.targetPixelSize = 11;
+                this.targetDistortion = 0.95;
+                this.animationProgress = 0;
+                this.animationDuration = 4000; // 4 seconds
+                this.startTime = Date.now();
+                
+                this.setupCanvas();
+                this.animate();
+            }
+
+            setupCanvas() {
+                const dpr = window.devicePixelRatio || 1;
+                const rect = { width: 600, height: 200 };
+                
+                this.canvas.width = rect.width * dpr;
+                this.canvas.height = rect.height * dpr;
+                this.canvas.style.width = rect.width + 'px';
+                this.canvas.style.height = rect.height + 'px';
+                
+                this.ctx.scale(dpr, dpr);
+                this.ctx.font = `bold ${this.fontSize}px 'JetBrains Mono', monospace`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+            }
+
+            easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+
+            lerp(start, end, t) {
+                return start + (end - start) * t;
+            }
+
+            createDitheredText() {
+                const currentTime = Date.now();
+                const elapsed = currentTime - this.startTime;
+                this.animationProgress = Math.min(elapsed / this.animationDuration, 1);
+                
+                const easedProgress = this.easeInOutCubic(this.animationProgress);
+                
+                // Animate from chaotic to clean
+                this.pixelSize = this.lerp(25, this.targetPixelSize, easedProgress);
+                this.distortion = this.lerp(0.2, this.targetDistortion, easedProgress);
+                
+                // Clear canvas
+                this.ctx.fillStyle = '#0f0f0f';
+                this.ctx.fillRect(0, 0, 600, 200);
+                
+                // Create off-screen canvas for text rendering
+                const textCanvas = document.createElement('canvas');
+                const textCtx = textCanvas.getContext('2d');
+                textCanvas.width = 600;
+                textCanvas.height = 200;
+                
+                // Render clean text
+                textCtx.fillStyle = '#ffffff';
+                textCtx.font = `bold ${this.fontSize}px 'JetBrains Mono', monospace`;
+                textCtx.textAlign = 'center';
+                textCtx.textBaseline = 'middle';
+                textCtx.fillText(this.text, 300, 100);
+                
+                // Get text image data
+                const imageData = textCtx.getImageData(0, 0, 600, 200);
+                const data = imageData.data;
+                
+                // Apply dithering effect
+                for (let y = 0; y < 200; y += Math.floor(this.pixelSize)) {
+                    for (let x = 0; x < 600; x += Math.floor(this.pixelSize)) {
+                        let brightness = 0;
+                        let pixelCount = 0;
+                        
+                        // Sample pixels in the current block
+                        for (let dy = 0; dy < Math.floor(this.pixelSize) && y + dy < 200; dy++) {
+                            for (let dx = 0; dx < Math.floor(this.pixelSize) && x + dx < 600; dx++) {
+                                const idx = ((y + dy) * 600 + (x + dx)) * 4;
+                                brightness += data[idx]; // Red channel (grayscale)
+                                pixelCount++;
+                            }
+                        }
+                        
+                        brightness /= pixelCount;
+                        
+                        // Add noise and distortion
+                        const noise = (Math.random() - 0.5) * 100;
+                        const threshold = 128 + noise * (1 - this.distortion);
+                        
+                        if (brightness > threshold) {
+                            // Add some color variation for visual interest
+                            const colorVariation = Math.random() * 0.3;
+                            const r = 255 - (colorVariation * 50);
+                            const g = 255 - (colorVariation * 30);
+                            const b = 255 - (colorVariation * 10);
+                            
+                            this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                            
+                            // Add slight random offset for organic feel
+                            const offsetX = (Math.random() - 0.5) * 2 * (1 - this.distortion);
+                            const offsetY = (Math.random() - 0.5) * 2 * (1 - this.distortion);
+                            
+                            this.ctx.fillRect(
+                                x + offsetX, 
+                                y + offsetY, 
+                                Math.floor(this.pixelSize), 
+                                Math.floor(this.pixelSize)
+                            );
+                        }
+                    }
+                }
+            }
+
+            animate() {
+                this.createDitheredText();
+                
+                if (this.animationProgress < 1) {
+                    requestAnimationFrame(() => this.animate());
+                }
+            }
+
+            updatePixelSize(value) {
+                this.targetPixelSize = parseFloat(value);
+                this.pixelSize = this.targetPixelSize;
+                this.createDitheredText();
+            }
+
+            updateDistortion(value) {
+                this.targetDistortion = parseFloat(value);
+                this.distortion = this.targetDistortion;
+                this.createDitheredText();
+            }
+        }
+
+        // Initialize
+        const canvas = document.getElementById('textCanvas');
+        const ditheredText = new DitheredText(canvas);
+
+        // Control handlers
+        document.getElementById('pixelSize').addEventListener('input', (e) => {
+            ditheredText.updatePixelSize(e.target.value);
+        });
+
+        document.getElementById('distortion').addEventListener('input', (e) => {
+            ditheredText.updateDistortion(e.target.value);
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            ditheredText.setupCanvas();
+            ditheredText.createDitheredText();
+        });
+    </script>
+</body>
+</html>

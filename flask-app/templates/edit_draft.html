@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block window_title %}{{ draft.title }} - Draft Mode{% endblock %}
+
+{% block breadcrumb %}
+<div style="font-size: 10px; color: var(--text-medium); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px;">
+    <a href="{{ url_for('dashboard') }}" style="color: inherit; text-decoration: none;">My Posts</a>
+    <span style="color: var(--mac-dark-gray); font-size: 8px;">▶</span>
+    {{ draft.title }}
+    <span style="color: var(--mac-dark-gray); font-size: 8px;">▶</span>
+    Edit
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .editor-container {
+        display: flex;
+        height: calc(100vh - 200px);
+        gap: 2px;
+        background: var(--mac-shadow);
+    }
+
+    .editor-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--mac-gray);
+    }
+
+    .panel-header {
+        background: var(--mac-gray);
+        background-image: var(--dither-pattern);
+        padding: 10px 16px;
+        border-bottom: 2px solid var(--mac-shadow);
+        font-weight: 500;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-dark);
+    }
+
+    .version-badge {
+        background: var(--accent-sage);
+        color: var(--mac-cream);
+        padding: 3px 8px;
+        border: 2px solid var(--mac-shadow);
+        border-top-color: var(--mac-cream);
+        border-left-color: var(--mac-cream);
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .editor-content {
+        flex: 1;
+        padding: 12px;
+        background: var(--mac-cream);
+        border: 3px inset var(--mac-gray);
+        border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
+        box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
+    }
+
+    .editor-textarea {
+        width: 100%;
+        height: 100%;
+        border: none;
+        outline: none;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        resize: none;
+        background: transparent;
+        color: var(--text-dark);
+    }
+
+    .preview-content {
+        flex: 1;
+        padding: 12px;
+        background: var(--mac-cream);
+        border: 3px inset var(--mac-gray);
+        border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
+        box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
+        overflow-y: auto;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .preview-content h1, .preview-content h2, .preview-content h3 {
+        margin-bottom: 12px;
+        color: var(--text-dark);
+    }
+
+    .preview-content p {
+        margin-bottom: 12px;
+    }
+
+    .preview-content pre {
+        background: var(--mac-light-gray);
+        padding: 12px;
+        border: 1px solid var(--mac-shadow);
+        overflow-x: auto;
+        margin-bottom: 12px;
+    }
+
+    .toolbar {
+        padding: 12px 16px;
+        background: var(--mac-gray);
+        background-image: var(--dither-pattern);
+        border-bottom: 2px solid var(--mac-shadow);
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .version-select {
+        padding: 4px 8px;
+        border: 2px solid var(--mac-shadow);
+        border-top-color: var(--mac-cream);
+        border-left-color: var(--mac-cream);
+        background: var(--mac-light-gray);
+        font-family: inherit;
+        font-size: 10px;
+        text-transform: uppercase;
+    }
+
+    .save-status {
+        font-size: 10px;
+        color: var(--text-medium);
+        font-style: italic;
+    }
+
+    .action-bar {
+        padding: 16px 24px;
+        background: var(--mac-gray);
+        background-image: var(--dither-pattern);
+        border-top: 2px solid var(--mac-shadow);
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    @media (max-width: 768px) {
+        .editor-container {
+            flex-direction: column;
+            height: auto;
+        }
+        
+        .editor-panel {
+            min-height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="saveBtn" class="btn primary">Save Version</button>
+        <button id="newVersionBtn" class="btn">New Version</button>
+        <span class="save-status" id="saveStatus">Last saved: Never</span>
+    </div>
+    
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <label for="compareVersion" style="font-size: 10px; text-transform: uppercase;">Compare with:</label>
+        <select id="compareVersion" class="version-select">
+            <option value="">Select version...</option>
+            {% for version in versions %}
+                {% if version.id != current_version.id %}
+                <option value="{{ version.id }}">{{ version.version_name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <a href="{{ url_for('dashboard') }}" class="btn">← Back</a>
+    </div>
+</div>
+
+<div class="editor-container">
+    <div class="editor-panel">
+        <div class="panel-header">
+            <span>{{ current_version.version_name }}</span>
+            <span class="version-badge">Current</span>
+        </div>
+        <div class="editor-content">
+            <textarea id="contentEditor" class="editor-textarea" placeholder="Start writing your blog post in Markdown...">{{ current_version.content }}</textarea>
+        </div>
+    </div>
+    
+    <div class="editor-panel">
+        <div class="panel-header">
+            <span id="rightPanelTitle">Preview</span>
+            <span class="version-badge" id="rightPanelBadge">Live</span>
+        </div>
+        <div id="previewContent" class="preview-content">
+            <!-- Preview content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<div class="action-bar">
+    <div>
+        <span style="font-size: 11px; color: var(--text-medium);">
+            Draft: {{ draft.title }} • Created {{ draft.created_at.strftime('%m/%d/%Y') }}
+        </span>
+    </div>
+    <div>
+        <button id="exportBtn" class="btn">Export Markdown</button>
+    </div>
+</div>
+
+<!-- New Version Modal -->
+<div id="newVersionModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--mac-gray); border: 3px solid var(--mac-shadow); border-top-color: var(--mac-cream); border-left-color: var(--mac-cream); padding: 24px; min-width: 300px;">
+        <h3 style="margin-bottom: 16px;">Create New Version</h3>
+        <div class="form-group">
+            <label for="newVersionName">Version Name</label>
+            <input type="text" id="newVersionName" placeholder="e.g. v2.0, Draft 2, Final">
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="createVersionBtn" class="btn primary">Create</button>
+            <button id="cancelVersionBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentVersionId = {{ current_version.id }};
+    let draftId = {{ draft.id }};
+    let autoSaveTimeout;
+    let lastSavedContent = document.getElementById('contentEditor').value;
+    
+    // Auto-save functionality
+    function autoSave() {
+        const content = document.getElementById('contentEditor').value;
+        if (content !== lastSavedContent) {
+            fetch(`/save_version/${currentVersionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    lastSavedContent = content;
+                    updateSaveStatus('Auto-saved');
+                }
+            });
+        }
+    }
+    
+    function updateSaveStatus(status) {
+        const now = new Date();
+        document.getElementById('saveStatus').textContent = `${status}: ${now.toLocaleTimeString()}`;
+    }
+    
+    // Preview update
+    function updatePreview() {
+        const content = document.getElementById('contentEditor').value;
+        fetch(`/preview/${currentVersionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('previewContent').innerHTML = data.html;
+        });
+    }
+    
+    // Event listeners
+    document.getElementById('contentEditor').addEventListener('input', function() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(autoSave, 2000); // Auto-save after 2 seconds of inactivity
+        updatePreview();
+    });
+    
+    document.getElementById('saveBtn').addEventListener('click', function() {
+        const content = document.getElementById('contentEditor').value;
+        fetch(`/save_version/${currentVersionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                lastSavedContent = content;
+                updateSaveStatus('Saved');
+            }
+        });
+    });
+    
+    // New version modal
+    document.getElementById('newVersionBtn').addEventListener('click', function() {
+        document.getElementById('newVersionModal').style.display = 'block';
+    });
+    
+    document.getElementById('cancelVersionBtn').addEventListener('click', function() {
+        document.getElementById('newVersionModal').style.display = 'none';
+    });
+    
+    document.getElementById('createVersionBtn').addEventListener('click', function() {
+        const versionName = document.getElementById('newVersionName').value;
+        if (!versionName) {
+            alert('Please enter a version name');
+            return;
+        }
+        
+        const content = document.getElementById('contentEditor').value;
+        const formData = new FormData();
+        formData.append('version_name', versionName);
+        formData.append('content', content);
+        
+        fetch(`/create_version/${draftId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Reload to show new version
+            }
+        });
+    });
+    
+    // Compare versions
+    document.getElementById('compareVersion').addEventListener('change', function() {
+        const compareVersionId = this.value;
+        if (compareVersionId) {
+            window.open(`/compare/${currentVersionId}/${compareVersionId}`, '_blank');
+        }
+    });
+    
+    // Export functionality
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        const content = document.getElementById('contentEditor').value;
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `{{ draft.title }}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+    
+    // Initial preview load
+    updatePreview();
+</script>
+{% endblock %}
