@@ -3,173 +3,419 @@
 {% block window_title %}{{ draft.title }} - Draft Mode{% endblock %}
 
 {% block breadcrumb %}
-<div style="font-size: 10px; color: var(--text-medium); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px;">
-    <a href="{{ url_for('dashboard') }}" style="color: inherit; text-decoration: none;">My Posts</a>
-    <span style="color: var(--mac-dark-gray); font-size: 8px;">▶</span>
-    {{ draft.title }}
-    <span style="color: var(--mac-dark-gray); font-size: 8px;">▶</span>
-    Edit
+<div class="breadcrumb">
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <span class="breadcrumb-separator">►</span>
+    <span style="color: var(--accent-green);">{{ draft.title }}</span>
+    <span class="breadcrumb-separator">►</span>
+    <span style="color: var(--text-secondary);">Editor</span>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
+    .editor-toolbar {
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-primary);
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .toolbar-left {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-right {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .version-selector {
+        padding: 6px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 120px;
+    }
+
+    .version-selector:focus {
+        outline: none;
+        border-color: var(--accent-green);
+        box-shadow: 0 0 0 1px var(--accent-green);
+    }
+
+    .save-status {
+        font-size: 10px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .save-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent-green);
+        box-shadow: 0 0 4px var(--accent-green);
+        animation: pulse 2s infinite;
+    }
+
+    .save-indicator.saving {
+        background: var(--accent-yellow);
+        box-shadow: 0 0 4px var(--accent-yellow);
+    }
+
+    .save-indicator.error {
+        background: var(--accent-red);
+        box-shadow: 0 0 4px var(--accent-red);
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
     .editor-container {
         display: flex;
-        height: calc(100vh - 200px);
+        height: calc(100vh - 280px);
+        min-height: 500px;
         gap: 2px;
-        background: var(--mac-shadow);
+        background: var(--border-primary);
     }
 
     .editor-panel {
         flex: 1;
         display: flex;
         flex-direction: column;
-        background: var(--mac-gray);
+        background: var(--bg-secondary);
+        min-width: 0;
     }
 
     .panel-header {
-        background: var(--mac-gray);
-        background-image: var(--dither-pattern);
-        padding: 10px 16px;
-        border-bottom: 2px solid var(--mac-shadow);
-        font-weight: 500;
-        font-size: 11px;
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-primary);
+        padding: 8px 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--text-dark);
-    }
-
-    .version-badge {
-        background: var(--accent-sage);
-        color: var(--mac-cream);
-        padding: 3px 8px;
-        border: 2px solid var(--mac-shadow);
-        border-top-color: var(--mac-cream);
-        border-left-color: var(--mac-cream);
-        font-size: 9px;
+        font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        color: var(--text-primary);
+    }
+
+    .panel-badge {
+        padding: 2px 6px;
+        background: var(--accent-green);
+        color: var(--bg-primary);
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 1px solid var(--accent-green);
+        box-shadow: 0 0 4px var(--accent-green);
+    }
+
+    .panel-badge.preview {
+        background: var(--accent-blue);
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 4px var(--accent-blue);
     }
 
     .editor-content {
         flex: 1;
-        padding: 12px;
-        background: var(--mac-cream);
-        border: 3px inset var(--mac-gray);
-        border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
-        box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
+        padding: 0;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-primary);
+        position: relative;
     }
 
     .editor-textarea {
         width: 100%;
         height: 100%;
+        padding: 16px;
         border: none;
         outline: none;
+        background: var(--bg-primary);
+        color: var(--text-primary);
         font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.6;
         resize: none;
-        background: transparent;
-        color: var(--text-dark);
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+    }
+
+    .editor-textarea::placeholder {
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
+    .editor-textarea:focus {
+        background: var(--bg-primary);
     }
 
     .preview-content {
         flex: 1;
-        padding: 12px;
-        background: var(--mac-cream);
-        border: 3px inset var(--mac-gray);
-        border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
-        box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
+        padding: 16px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-primary);
         overflow-y: auto;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.6;
+        color: var(--text-primary);
     }
 
-    .preview-content h1, .preview-content h2, .preview-content h3 {
+    .preview-content h1,
+    .preview-content h2,
+    .preview-content h3,
+    .preview-content h4,
+    .preview-content h5,
+    .preview-content h6 {
+        color: var(--accent-green);
         margin-bottom: 12px;
-        color: var(--text-dark);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-shadow: var(--glow-primary);
     }
+
+    .preview-content h1 { font-size: 24px; border-bottom: 2px solid var(--accent-green); padding-bottom: 8px; }
+    .preview-content h2 { font-size: 20px; }
+    .preview-content h3 { font-size: 16px; }
 
     .preview-content p {
-        margin-bottom: 12px;
+        margin-bottom: 16px;
+        color: var(--text-primary);
+    }
+
+    .preview-content code {
+        background: var(--bg-tertiary);
+        color: var(--accent-green);
+        padding: 2px 6px;
+        border: 1px solid var(--border-primary);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
     }
 
     .preview-content pre {
-        background: var(--mac-light-gray);
-        padding: 12px;
-        border: 1px solid var(--mac-shadow);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        padding: 16px;
         overflow-x: auto;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
+        position: relative;
     }
 
-    .toolbar {
-        padding: 12px 16px;
-        background: var(--mac-gray);
-        background-image: var(--dither-pattern);
-        border-bottom: 2px solid var(--mac-shadow);
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .version-select {
-        padding: 4px 8px;
-        border: 2px solid var(--mac-shadow);
-        border-top-color: var(--mac-cream);
-        border-left-color: var(--mac-cream);
-        background: var(--mac-light-gray);
-        font-family: inherit;
-        font-size: 10px;
+    .preview-content pre::before {
+        content: 'CODE';
+        position: absolute;
+        top: 4px;
+        right: 8px;
+        font-size: 8px;
+        color: var(--text-muted);
         text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
-    .save-status {
-        font-size: 10px;
-        color: var(--text-medium);
+    .preview-content pre code {
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--text-primary);
+    }
+
+    .preview-content blockquote {
+        border-left: 3px solid var(--accent-green);
+        padding-left: 16px;
+        margin: 16px 0;
+        color: var(--text-secondary);
         font-style: italic;
     }
 
+    .preview-content ul, .preview-content ol {
+        margin-bottom: 16px;
+        padding-left: 20px;
+    }
+
+    .preview-content li {
+        margin-bottom: 4px;
+        color: var(--text-primary);
+    }
+
     .action-bar {
-        padding: 16px 24px;
-        background: var(--mac-gray);
-        background-image: var(--dither-pattern);
-        border-top: 2px solid var(--mac-shadow);
+        background: var(--bg-tertiary);
+        border-top: 1px solid var(--border-primary);
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .draft-info {
+        font-size: 10px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .action-buttons {
         display: flex;
         gap: 8px;
-        justify-content: space-between;
         align-items: center;
     }
 
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-primary);
+        padding: 24px;
+        min-width: 300px;
+        max-width: 90vw;
+        box-shadow: 0 8px 32px rgba(0, 255, 65, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-primary);
+    }
+
+    .modal-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-primary);
+    }
+
+    .modal-close {
+        background: none;
+        border: 1px solid var(--border-primary);
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .modal-close:hover {
+        color: var(--accent-red);
+        border-color: var(--accent-red);
+    }
+
+    /* Mobile responsiveness */
     @media (max-width: 768px) {
         .editor-container {
             flex-direction: column;
             height: auto;
         }
-        
+
         .editor-panel {
             min-height: 300px;
         }
+
+        .editor-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .toolbar-left,
+        .toolbar-right {
+            justify-content: center;
+        }
+
+        .preview-content {
+            font-size: 13px;
+        }
+
+        .action-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .action-buttons {
+            justify-content: center;
+        }
+    }
+
+    /* Loading states */
+    .loading {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.2), transparent);
+        animation: loading-sweep 1.5s infinite;
+    }
+
+    @keyframes loading-sweep {
+        0% { left: -100%; }
+        100% { left: 100%; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="toolbar">
-    <div style="display: flex; gap: 8px; align-items: center;">
+<div class="editor-toolbar">
+    <div class="toolbar-left">
         <button id="saveBtn" class="btn primary">Save Version</button>
         <button id="newVersionBtn" class="btn">New Version</button>
-        <span class="save-status" id="saveStatus">Last saved: Never</span>
+        <div class="save-status">
+            <div class="save-indicator" id="saveIndicator"></div>
+            <span id="saveStatus">Ready</span>
+        </div>
     </div>
     
-    <div style="display: flex; gap: 8px; align-items: center;">
-        <label for="compareVersion" style="font-size: 10px; text-transform: uppercase;">Compare with:</label>
-        <select id="compareVersion" class="version-select">
+    <div class="toolbar-right">
+        <label for="compareVersion" style="font-size: 10px; text-transform: uppercase; color: var(--text-muted);">Compare:</label>
+        <select id="compareVersion" class="version-selector">
             <option value="">Select version...</option>
             {% for version in versions %}
                 {% if version.id != current_version.id %}
@@ -177,7 +423,7 @@
                 {% endif %}
             {% endfor %}
         </select>
-        <a href="{{ url_for('dashboard') }}" class="btn">← Back</a>
+        <a href="{{ url_for('dashboard') }}" class="btn">← Dashboard</a>
     </div>
 </div>
 
@@ -185,17 +431,35 @@
     <div class="editor-panel">
         <div class="panel-header">
             <span>{{ current_version.version_name }}</span>
-            <span class="version-badge">Current</span>
+            <span class="panel-badge">Editor</span>
         </div>
         <div class="editor-content">
-            <textarea id="contentEditor" class="editor-textarea" placeholder="Start writing your blog post in Markdown...">{{ current_version.content }}</textarea>
+            <textarea 
+                id="contentEditor" 
+                class="editor-textarea" 
+                placeholder="# Start writing your blog post in Markdown...
+
+## Use headers, **bold text**, and *italics*
+
+```javascript
+// Code blocks are supported too!
+console.log('Hello, Draft Mode!');
+```
+
+> Blockquotes for emphasis
+
+- Bullet points
+- And numbered lists work great
+
+Ready to begin? Start typing and watch the preview update in real-time!"
+            >{{ current_version.content }}</textarea>
         </div>
     </div>
     
     <div class="editor-panel">
         <div class="panel-header">
-            <span id="rightPanelTitle">Preview</span>
-            <span class="version-badge" id="rightPanelBadge">Live</span>
+            <span>Live Preview</span>
+            <span class="panel-badge preview">Preview</span>
         </div>
         <div id="previewContent" class="preview-content">
             <!-- Preview content will be loaded here -->
@@ -204,26 +468,28 @@
 </div>
 
 <div class="action-bar">
-    <div>
-        <span style="font-size: 11px; color: var(--text-medium);">
-            Draft: {{ draft.title }} • Created {{ draft.created_at.strftime('%m/%d/%Y') }}
-        </span>
+    <div class="draft-info">
+        Draft: {{ draft.title }} • Created {{ draft.created_at.strftime('%m/%d/%Y') }} • {{ draft.versions|length }} version(s)
     </div>
-    <div>
-        <button id="exportBtn" class="btn">Export Markdown</button>
+    <div class="action-buttons">
+        <button id="exportBtn" class="btn">Export .MD</button>
+        <button id="fullscreenBtn" class="btn">Fullscreen</button>
     </div>
 </div>
 
 <!-- New Version Modal -->
-<div id="newVersionModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--mac-gray); border: 3px solid var(--mac-shadow); border-top-color: var(--mac-cream); border-left-color: var(--mac-cream); padding: 24px; min-width: 300px;">
-        <h3 style="margin-bottom: 16px;">Create New Version</h3>
+<div id="newVersionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Create New Version</h3>
+            <button class="modal-close" id="closeModalBtn">✕</button>
+        </div>
         <div class="form-group">
             <label for="newVersionName">Version Name</label>
-            <input type="text" id="newVersionName" placeholder="e.g. v2.0, Draft 2, Final">
+            <input type="text" id="newVersionName" placeholder="e.g. v2.0, Draft 2, Final Edit">
         </div>
         <div style="margin-top: 20px; display: flex; gap: 8px;">
-            <button id="createVersionBtn" class="btn primary">Create</button>
+            <button id="createVersionBtn" class="btn primary">Create Version</button>
             <button id="cancelVersionBtn" class="btn">Cancel</button>
         </div>
     </div>
@@ -237,84 +503,121 @@
     let autoSaveTimeout;
     let lastSavedContent = document.getElementById('contentEditor').value;
     
+    // Save status management
+    function updateSaveStatus(status, type = 'ready') {
+        const indicator = document.getElementById('saveIndicator');
+        const statusText = document.getElementById('saveStatus');
+        
+        indicator.className = 'save-indicator';
+        if (type === 'saving') indicator.classList.add('saving');
+        if (type === 'error') indicator.classList.add('error');
+        
+        const now = new Date();
+        statusText.textContent = `${status} ${now.toLocaleTimeString()}`;
+    }
+    
     // Auto-save functionality
     function autoSave() {
         const content = document.getElementById('contentEditor').value;
         if (content !== lastSavedContent) {
+            updateSaveStatus('Saving...', 'saving');
+            
             fetch(`/save_version/${currentVersionId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: content })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     lastSavedContent = content;
-                    updateSaveStatus('Auto-saved');
+                    updateSaveStatus('Auto-saved', 'ready');
+                } else {
+                    updateSaveStatus('Save failed', 'error');
                 }
+            })
+            .catch(() => {
+                updateSaveStatus('Save failed', 'error');
             });
         }
-    }
-    
-    function updateSaveStatus(status) {
-        const now = new Date();
-        document.getElementById('saveStatus').textContent = `${status}: ${now.toLocaleTimeString()}`;
     }
     
     // Preview update
     function updatePreview() {
         const content = document.getElementById('contentEditor').value;
+        const previewContent = document.getElementById('previewContent');
+        
+        previewContent.classList.add('loading');
+        
         fetch(`/preview/${currentVersionId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: content })
         })
         .then(response => response.json())
         .then(data => {
-            document.getElementById('previewContent').innerHTML = data.html;
+            previewContent.innerHTML = data.html;
+            previewContent.classList.remove('loading');
+        })
+        .catch(() => {
+            previewContent.innerHTML = '<p style="color: var(--accent-red);">Preview unavailable</p>';
+            previewContent.classList.remove('loading');
         });
     }
     
     // Event listeners
     document.getElementById('contentEditor').addEventListener('input', function() {
         clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(autoSave, 2000); // Auto-save after 2 seconds of inactivity
+        autoSaveTimeout = setTimeout(autoSave, 2000);
         updatePreview();
     });
     
     document.getElementById('saveBtn').addEventListener('click', function() {
         const content = document.getElementById('contentEditor').value;
+        updateSaveStatus('Saving...', 'saving');
+        
         fetch(`/save_version/${currentVersionId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: content })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 lastSavedContent = content;
-                updateSaveStatus('Saved');
+                updateSaveStatus('Saved', 'ready');
+            } else {
+                updateSaveStatus('Save failed', 'error');
             }
         });
     });
     
-    // New version modal
-    document.getElementById('newVersionBtn').addEventListener('click', function() {
-        document.getElementById('newVersionModal').style.display = 'block';
+    // Modal management
+    const modal = document.getElementById('newVersionModal');
+    const newVersionBtn = document.getElementById('newVersionBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelVersionBtn = document.getElementById('cancelVersionBtn');
+    
+    newVersionBtn.addEventListener('click', () => {
+        modal.style.display = 'block';
+        document.getElementById('newVersionName').focus();
     });
     
-    document.getElementById('cancelVersionBtn').addEventListener('click', function() {
-        document.getElementById('newVersionModal').style.display = 'none';
+    [closeModalBtn, cancelVersionBtn].forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.getElementById('newVersionName').value = '';
+        });
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
     });
     
     document.getElementById('createVersionBtn').addEventListener('click', function() {
-        const versionName = document.getElementById('newVersionName').value;
+        const versionName = document.getElementById('newVersionName').value.trim();
         if (!versionName) {
             alert('Please enter a version name');
             return;
@@ -332,7 +635,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload(); // Reload to show new version
+                location.reload();
             }
         });
     });
@@ -357,7 +660,36 @@
         URL.revokeObjectURL(url);
     });
     
+    // Fullscreen toggle
+    document.getElementById('fullscreenBtn').addEventListener('click', function() {
+        const container = document.querySelector('.editor-container');
+        if (!document.fullscreenElement) {
+            container.requestFullscreen();
+            this.textContent = 'Exit Fullscreen';
+        } else {
+            document.exitFullscreen();
+            this.textContent = 'Fullscreen';
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 's':
+                    e.preventDefault();
+                    document.getElementById('saveBtn').click();
+                    break;
+                case 'n':
+                    e.preventDefault();
+                    document.getElementById('newVersionBtn').click();
+                    break;
+            }
+        }
+    });
+    
     // Initial preview load
     updatePreview();
+    updateSaveStatus('Ready', 'ready');
 </script>
 {% endblock %}

@@ -4,23 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Draft Mode{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --mac-cream: #f7f4e8;
-            --mac-gray: #d4d1c4;
-            --mac-dark-gray: #8a8572;
-            --mac-light-gray: #e8e6db;
-            --mac-shadow: #3a362a;
-            --mac-black: #1a1810;
-            --accent-sage: #6b7c54;
-            --accent-rust: #a8634f;
-            --accent-amber: #c49060;
-            --text-dark: #2a2418;
-            --text-medium: #5c5843;
-            --text-light: #8a8572;
-            --dither-pattern: url("data:image/svg+xml,%3Csvg width='2' height='2' viewBox='0 0 2 2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0 L1,1 M1,0 L2,1' stroke='%238a8572' stroke-width='0.3' fill='none' opacity='0.4'/%3E%3C/svg%3E");
-            --scan-lines: url("data:image/svg+xml,%3Csvg width='100%25' height='2' viewBox='0 0 100 2' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='1' x2='100' y2='1' stroke='%23000' stroke-width='0.5' opacity='0.03'/%3E%3C/svg%3E");
+            /* High contrast color scheme */
+            --bg-primary: #000000;
+            --bg-secondary: #111111;
+            --bg-tertiary: #222222;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --border-primary: #333333;
+            --border-secondary: #555555;
+            
+            /* Accent colors for interactive elements */
+            --accent-green: #00ff41;
+            --accent-red: #ff073a;
+            --accent-yellow: #ffdd00;
+            --accent-blue: #0099ff;
+            --accent-purple: #9d4edd;
+            
+            /* LED/Pixel effects */
+            --pixel-size: 2px;
+            --glow-primary: 0 0 10px var(--accent-green);
+            --glow-secondary: 0 0 5px var(--accent-blue);
+            --scan-lines: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.03) 2px,
+                rgba(255, 255, 255, 0.03) 4px
+            );
         }
 
         * {
@@ -31,144 +45,274 @@
 
         body {
             font-family: 'JetBrains Mono', monospace;
-            background: var(--mac-cream);
-            background-image: var(--dither-pattern), var(--scan-lines);
-            background-size: 8px 8px, 100% 2px;
-            min-height: 100vh;
-            color: var(--text-dark);
+            background: var(--bg-primary);
+            background-image: var(--scan-lines);
+            color: var(--text-primary);
             line-height: 1.4;
+            min-height: 100vh;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
 
-        .window {
-            background: var(--mac-gray);
-            border: 3px solid var(--mac-shadow);
-            border-top-color: var(--mac-cream);
-            border-left-color: var(--mac-cream);
-            border-right-color: var(--mac-shadow);
-            border-bottom-color: var(--mac-shadow);
-            margin: 20px;
-            min-height: calc(100vh - 40px);
+        /* Dithered Logo Component */
+        .dithered-logo {
+            width: 120px;
+            height: 40px;
             position: relative;
-            box-shadow: 4px 4px 8px rgba(26, 24, 16, 0.3);
+            display: inline-block;
         }
 
+        .dithered-logo canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-primary);
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 0 var(--accent-green);
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .nav-brand:hover .dithered-logo {
+            filter: drop-shadow(var(--glow-primary));
+        }
+
+        .brand-text {
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-link {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link:hover {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+            box-shadow: var(--glow-primary);
+        }
+
+        .nav-link.primary {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+        }
+
+        .nav-link.primary:hover {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+        }
+
+        /* Mobile menu toggle */
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            padding: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .nav-toggle:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        /* Main container */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 16px;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* Window container for content */
+        .window {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-primary);
+            position: relative;
+            min-height: 500px;
+            box-shadow: 
+                inset 0 0 0 1px var(--border-secondary),
+                0 4px 0 var(--bg-tertiary);
+        }
+
+        .window::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--accent-green) 0%, transparent 50%, var(--accent-green) 100%);
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        /* Window title bar */
         .title-bar {
-            background: linear-gradient(to bottom, var(--mac-light-gray), var(--mac-gray));
-            border-bottom: 2px solid var(--mac-shadow);
-            height: 28px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-primary);
+            height: 32px;
             display: flex;
             align-items: center;
             padding: 0 12px;
             position: relative;
-            background-image: var(--dither-pattern);
         }
 
-        .traffic-lights {
+        .window-controls {
             display: flex;
-            gap: 6px;
+            gap: 4px;
         }
 
-        .traffic-light {
-            width: 10px;
-            height: 10px;
-            border: 2px solid var(--mac-shadow);
-            border-top-color: var(--mac-cream);
-            border-left-color: var(--mac-cream);
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border: 1px solid var(--border-primary);
             cursor: pointer;
+            position: relative;
         }
 
-        .traffic-light.close { background: var(--accent-rust); }
-        .traffic-light.minimize { background: var(--accent-amber); }
-        .traffic-light.maximize { background: var(--accent-sage); }
+        .window-control.close { background: var(--accent-red); }
+        .window-control.minimize { background: var(--accent-yellow); }
+        .window-control.maximize { background: var(--accent-green); }
+
+        .window-control:hover {
+            box-shadow: 0 0 4px currentColor;
+        }
 
         .window-title {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            font-weight: 600;
             font-size: 11px;
-            color: var(--text-dark);
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
         }
 
-        .header {
-            padding: 20px 24px;
-            background: var(--mac-gray);
-            border-bottom: 2px solid var(--mac-shadow);
-            background-image: var(--dither-pattern);
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-
-        .logo {
-            width: 42px;
-            height: 42px;
-            background: var(--accent-sage);
-            border: 3px solid var(--mac-shadow);
-            border-top-color: var(--mac-cream);
-            border-left-color: var(--mac-cream);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            color: var(--mac-cream);
-            font-size: 16px;
-            position: relative;
-            box-shadow: inset 1px 1px 0 rgba(247, 244, 232, 0.3);
-        }
-
-        .app-name {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--text-dark);
-            text-shadow: 1px 1px 0 var(--mac-cream);
-        }
-
+        /* Content area */
         .content {
             padding: 24px;
-            background: var(--mac-light-gray);
+            background: var(--bg-primary);
             min-height: 400px;
         }
 
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 { font-size: 24px; }
+        h2 { font-size: 20px; }
+        h3 { font-size: 16px; }
+
+        /* Buttons */
         .btn {
             padding: 8px 16px;
-            border: 3px solid var(--mac-shadow);
-            border-top-color: var(--mac-cream);
-            border-left-color: var(--mac-cream);
-            background: var(--mac-light-gray);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
             font-family: inherit;
             font-size: 12px;
             font-weight: 600;
-            cursor: pointer;
-            color: var(--text-dark);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            cursor: pointer;
             text-decoration: none;
             display: inline-block;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn:hover {
-            background: var(--mac-cream);
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+            box-shadow: var(--glow-primary);
         }
 
         .btn:active {
-            border-top-color: var(--mac-shadow);
-            border-left-color: var(--mac-shadow);
-            border-right-color: var(--mac-cream);
-            border-bottom-color: var(--mac-cream);
+            transform: translateY(1px);
         }
 
         .btn.primary {
-            background: var(--accent-sage);
-            color: var(--mac-cream);
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
         }
 
+        .btn.primary:hover {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+        }
+
+        .btn.danger {
+            background: var(--accent-red);
+            color: var(--text-primary);
+            border-color: var(--accent-red);
+        }
+
+        .btn.danger:hover {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+            color: var(--accent-red);
+        }
+
+        /* Forms */
         .form-group {
             margin-bottom: 16px;
         }
@@ -180,67 +324,317 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            color: var(--text-secondary);
         }
 
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             padding: 8px 12px;
-            border: 3px inset var(--mac-gray);
-            border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
-            background: var(--mac-cream);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
             font-family: inherit;
             font-size: 12px;
+            transition: all 0.2s ease;
         }
 
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 1px var(--accent-green);
+        }
+
+        /* Flash messages */
         .flash-messages {
             margin-bottom: 16px;
         }
 
         .flash {
-            padding: 8px 12px;
-            background: var(--accent-rust);
-            color: var(--mac-cream);
-            border: 2px solid var(--mac-shadow);
+            padding: 12px 16px;
+            border: 1px solid var(--border-primary);
             margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+
+        .flash.error {
+            background: var(--accent-red);
+            color: var(--text-primary);
+            border-color: var(--accent-red);
+        }
+
+        .flash.success {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-primary);
+            margin-bottom: 16px;
+        }
+
+        .breadcrumb a {
+            color: var(--accent-green);
+            text-decoration: none;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .breadcrumb a:hover {
+            text-shadow: var(--glow-primary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-muted);
+            margin: 0 6px;
+            font-size: 8px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--bg-secondary);
+                border-top: 1px solid var(--border-primary);
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .nav-toggle {
+                display: block;
+            }
+
+            .nav-link {
+                padding: 12px 16px;
+                border: none;
+                border-bottom: 1px solid var(--border-primary);
+                width: 100%;
+                text-align: left;
+            }
+
+            .main-container {
+                padding: 10px 8px;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .brand-text {
+                font-size: 14px;
+            }
+
+            .dithered-logo {
+                width: 80px;
+                height: 28px;
+            }
+        }
+
+        /* Utility classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mb-0 { margin-bottom: 0; }
+        .mb-1 { margin-bottom: 8px; }
+        .mb-2 { margin-bottom: 16px; }
+        .mb-3 { margin-bottom: 24px; }
+        .flex { display: flex; }
+        .flex-center { align-items: center; }
+        .flex-between { justify-content: space-between; }
+        .gap-1 { gap: 8px; }
+        .gap-2 { gap: 16px; }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="window">
-        <div class="title-bar">
-            <div class="traffic-lights">
-                <div class="traffic-light close"></div>
-                <div class="traffic-light minimize"></div>
-                <div class="traffic-light maximize"></div>
-            </div>
-            <div class="window-title">{% block window_title %}Draft Mode{% endblock %}</div>
-        </div>
-        
-        <div class="header">
-            <div class="logo-section">
-                <div class="logo">D</div>
-                <div>
-                    <div class="app-name">Draft Mode</div>
-                    {% block breadcrumb %}{% endblock %}
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="{% if session.user_id %}{{ url_for('dashboard') }}{% else %}{{ url_for('index') }}{% endif %}" class="nav-brand">
+                <div class="dithered-logo">
+                    <canvas id="logoCanvas"></canvas>
                 </div>
+                <span class="brand-text">Draft Mode</span>
+            </a>
+            
+            <button class="nav-toggle" id="navToggle">☰</button>
+            
+            <div class="nav-menu" id="navMenu">
+                {% if session.user_id %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+                    <a href="{{ url_for('create_draft') }}" class="nav-link primary">New Draft</a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link">Sign In</a>
+                    <a href="{{ url_for('signup') }}" class="nav-link primary">Sign Up</a>
+                {% endif %}
             </div>
         </div>
-        
-        <div class="content">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="flash-messages">
-                        {% for message in messages %}
-                            <div class="flash">{{ message }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <div class="window">
+            <div class="title-bar">
+                <div class="window-controls">
+                    <div class="window-control close"></div>
+                    <div class="window-control minimize"></div>
+                    <div class="window-control maximize"></div>
+                </div>
+                <div class="window-title">{% block window_title %}Draft Mode{% endblock %}</div>
+            </div>
             
-            {% block content %}{% endblock %}
+            <div class="content">
+                {% block breadcrumb %}{% endblock %}
+                
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for message in messages %}
+                                <div class="flash error">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                {% block content %}{% endblock %}
+            </div>
         </div>
     </div>
+
+    <script>
+        // Dithered logo implementation
+        class DitheredLogo {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.text = 'D';
+                this.fontSize = 24;
+                this.pixelSize = 3;
+                this.setupCanvas();
+                this.render();
+            }
+
+            setupCanvas() {
+                const dpr = window.devicePixelRatio || 1;
+                const rect = { width: 120, height: 40 };
+                
+                this.canvas.width = rect.width * dpr;
+                this.canvas.height = rect.height * dpr;
+                this.canvas.style.width = rect.width + 'px';
+                this.canvas.style.height = rect.height + 'px';
+                
+                this.ctx.scale(dpr, dpr);
+                this.ctx.font = `bold ${this.fontSize}px 'JetBrains Mono', monospace`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+            }
+
+            render() {
+                // Clear canvas
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillRect(0, 0, 120, 40);
+                
+                // Create off-screen canvas for text
+                const textCanvas = document.createElement('canvas');
+                const textCtx = textCanvas.getContext('2d');
+                textCanvas.width = 120;
+                textCanvas.height = 40;
+                
+                // Render text
+                textCtx.fillStyle = '#ffffff';
+                textCtx.font = `bold ${this.fontSize}px 'JetBrains Mono', monospace`;
+                textCtx.textAlign = 'center';
+                textCtx.textBaseline = 'middle';
+                textCtx.fillText(this.text, 60, 20);
+                
+                // Get image data
+                const imageData = textCtx.getImageData(0, 0, 120, 40);
+                const data = imageData.data;
+                
+                // Apply dithering
+                for (let y = 0; y < 40; y += this.pixelSize) {
+                    for (let x = 0; x < 120; x += this.pixelSize) {
+                        let brightness = 0;
+                        let pixelCount = 0;
+                        
+                        // Sample pixels in block
+                        for (let dy = 0; dy < this.pixelSize && y + dy < 40; dy++) {
+                            for (let dx = 0; dx < this.pixelSize && x + dx < 120; dx++) {
+                                const idx = ((y + dy) * 120 + (x + dx)) * 4;
+                                brightness += data[idx];
+                                pixelCount++;
+                            }
+                        }
+                        
+                        brightness /= pixelCount;
+                        
+                        // Threshold with noise
+                        const noise = (Math.random() - 0.5) * 50;
+                        const threshold = 128 + noise;
+                        
+                        if (brightness > threshold) {
+                            this.ctx.fillStyle = '#00ff41';
+                            this.ctx.fillRect(x, y, this.pixelSize, this.pixelSize);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Initialize logo
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoCanvas = document.getElementById('logoCanvas');
+            if (logoCanvas) {
+                new DitheredLogo(logoCanvas);
+            }
+
+            // Mobile menu toggle
+            const navToggle = document.getElementById('navToggle');
+            const navMenu = document.getElementById('navMenu');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                });
+            }
+
+            // Window control interactions
+            document.querySelector('.window-control.close')?.addEventListener('click', () => {
+                alert('Nice try! 😄 This is just a demo interface.');
+            });
+
+            document.querySelector('.window-control.minimize')?.addEventListener('click', () => {
+                const content = document.querySelector('.content');
+                content.style.transform = content.style.transform === 'scale(0.1)' ? 'scale(1)' : 'scale(0.1)';
+                content.style.transition = 'transform 0.3s ease';
+            });
+
+            document.querySelector('.window-control.maximize')?.addEventListener('click', () => {
+                const window = document.querySelector('.window');
+                window.style.position = window.style.position === 'fixed' ? 'relative' : 'fixed';
+                window.style.top = window.style.position === 'fixed' ? '0' : 'auto';
+                window.style.left = window.style.position === 'fixed' ? '0' : 'auto';
+                window.style.right = window.style.position === 'fixed' ? '0' : 'auto';
+                window.style.bottom = window.style.position === 'fixed' ? '0' : 'auto';
+                window.style.zIndex = window.style.position === 'fixed' ? '999' : 'auto';
+                window.style.transition = 'all 0.3s ease';
+            });
+        });
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>
