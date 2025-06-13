@@ -156,10 +156,23 @@ def edit_draft(draft_id):
     user = get_current_user()
     draft = BlogDraft.query.filter_by(id=draft_id, user_id=user.id).first_or_404()
     
-    # Get current version or latest version
-    current_version = DraftVersion.query.filter_by(blog_draft_id=draft.id, is_current=True).first()
-    if not current_version:
-        current_version = DraftVersion.query.filter_by(blog_draft_id=draft.id).order_by(DraftVersion.created_at.desc()).first()
+    # Check if specific version requested
+    version_id = request.args.get('version')
+    if version_id:
+        current_version = DraftVersion.query.filter_by(
+            id=version_id, 
+            blog_draft_id=draft.id
+        ).first()
+        if current_version:
+            # Update current version flag
+            DraftVersion.query.filter_by(blog_draft_id=draft.id, is_current=True).update({'is_current': False})
+            current_version.is_current = True
+            db.session.commit()
+    else:
+        # Get current version or latest version
+        current_version = DraftVersion.query.filter_by(blog_draft_id=draft.id, is_current=True).first()
+        if not current_version:
+            current_version = DraftVersion.query.filter_by(blog_draft_id=draft.id).order_by(DraftVersion.created_at.desc()).first()
     
     versions = DraftVersion.query.filter_by(blog_draft_id=draft.id).order_by(DraftVersion.created_at.desc()).all()
     
@@ -258,6 +271,203 @@ def compare_versions(version1_id, version2_id):
                          draft=version1.blog_draft,
                          version1=version1, 
                          version2=version2)
+
+# NEW ROUTES FOR ENHANCED FUNCTIONALITY
+
+@app.route('/rename_draft/<int:draft_id>', methods=['POST'])
+@login_required
+def rename_draft(draft_id):
+    """Rename a blog draft"""
+    user = get_current_user()
+    draft = BlogDraft.query.filter_by(id=draft_id, user_id=user.id).first_or_404()
+    
+    new_name = request.json.get('name', '').strip()
+    if not new_name:
+        return jsonify({'success': False, 'error': 'Name cannot be empty'})
+    
+    draft.title = new_name
+    draft.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/rename_version/<int:version_id>', methods=['POST'])
+@login_required
+def rename_version(version_id):
+    """Rename a draft version"""
+    user = get_current_user()
+    version = DraftVersion.query.join(BlogDraft).filter(
+        DraftVersion.id == version_id,
+        BlogDraft.user_id == user.id
+    ).first_or_404()
+    
+    new_name = request.json.get('name', '').strip()
+    if not new_name:
+        return jsonify({'success': False, 'error': 'Name cannot be empty'})
+    
+    version.version_name = new_name
+    version.updated_at = datetime.utcnow()
+    
+    # Update the parent draft's updated_at timestamp
+    version.blog_draft.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/mark_final/<int:version_id>', methods=['POST'])
+@login_required
+def mark_final(version_id):
+    """Mark a version as final/published"""
+    user = get_current_user()
+    version = DraftVersion.query.join(BlogDraft).filter(
+        DraftVersion.id == version_id,
+        BlogDraft.user_id == user.id
+    ).first_or_404()
+    
+    final_name = request.json.get('name', '').strip()
+    if not final_name:
+        return jsonify({'success': False, 'error': 'Final name cannot be empty'})
+    
+    # Update version name to indicate it's final
+    version.version_name = final_name
+    version.updated_at = datetime.utcnow()
+    
+    # Update the parent draft's updated_at timestamp
+    version.blog_draft.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/delete_version/<int:version_id>', methods=['POST'])
+@login_required
+def delete_version(version_id):
+    """Delete a draft version (with safety checks)"""
+    user = get_current_user()
+    version = DraftVersion.query.join(BlogDraft).filter(
+        DraftVersion.id == version_id,
+        BlogDraft.user_id == user.id
+    ).first_or_404()
+    
+    # Check if this is the only version
+    version_count = DraftVersion.query.filter_by(blog_draft_id=version.blog_draft_id).count()
+    if version_count <= 1:
+        return jsonify({'success': False, 'error': 'Cannot delete the only version of a draft'})
+    
+    # If this is the current version, set another version as current
+    if version.is_current:
+        other_version = DraftVersion.query.filter(
+            DraftVersion.blog_draft_id == version.blog_draft_id,
+            DraftVersion.id != version.id
+        ).order_by(DraftVersion.created_at.desc()).first()
+        
+        if other_version:
+            other_version.is_current = True
+    
+    # Update the parent draft's updated_at timestamp
+    version.blog_draft.updated_at = datetime.utcnow()
+    
+    db.session.delete(version)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/delete_draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_draft(draft_id):
+    """Delete an entire draft and all its versions"""
+    user = get_current_user()
+    draft = BlogDraft.query.filter_by(id=draft_id, user_id=user.id).first_or_404()
+    
+    # This will cascade delete all versions due to the relationship setup
+    db.session.delete(draft)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/duplicate_version/<int:version_id>', methods=['POST'])
+@login_required
+def duplicate_version(version_id):
+    """Create a duplicate of an existing version"""
+    user = get_current_user()
+    original_version = DraftVersion.query.join(BlogDraft).filter(
+        DraftVersion.id == version_id,
+        BlogDraft.user_id == user.id
+    ).first_or_404()
+    
+    new_name = request.json.get('name', f"{original_version.version_name} (Copy)")
+    
+    # Unset current version flag from other versions
+    DraftVersion.query.filter_by(
+        blog_draft_id=original_version.blog_draft_id, 
+        is_current=True
+    ).update({'is_current': False})
+    
+    # Create duplicate version
+    duplicate = DraftVersion(
+        version_name=new_name,
+        content=original_version.content,
+        blog_draft_id=original_version.blog_draft_id,
+        is_current=True
+    )
+    
+    db.session.add(duplicate)
+    
+    # Update the parent draft's updated_at timestamp
+    original_version.blog_draft.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    return jsonify({'success': True, 'version_id': duplicate.id})
+
+@app.route('/api/drafts/<int:draft_id>/stats')
+@login_required
+def get_draft_stats(draft_id):
+    """Get statistics for a specific draft"""
+    user = get_current_user()
+    draft = BlogDraft.query.filter_by(id=draft_id, user_id=user.id).first_or_404()
+    
+    versions = DraftVersion.query.filter_by(blog_draft_id=draft.id).all()
+    
+    total_words = 0
+    total_chars = 0
+    
+    for version in versions:
+        # Simple word and character count
+        words = len(version.content.split())
+        chars = len(version.content)
+        total_words += words
+        total_chars += chars
+    
+    current_version = next((v for v in versions if v.is_current), versions[0] if versions else None)
+    current_words = len(current_version.content.split()) if current_version else 0
+    current_chars = len(current_version.content) if current_version else 0
+    
+    stats = {
+        'draft_id': draft.id,
+        'title': draft.title,
+        'total_versions': len(versions),
+        'total_words_all_versions': total_words,
+        'total_chars_all_versions': total_chars,
+        'current_version_words': current_words,
+        'current_version_chars': current_chars,
+        'created_at': draft.created_at.isoformat(),
+        'updated_at': draft.updated_at.isoformat(),
+        'has_final_version': any('final' in v.version_name.lower() or 'published' in v.version_name.lower() for v in versions)
+    }
+    
+    return jsonify(stats)
+
+# Error handlers
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('500.html'), 500
 
 if __name__ == '__main__':
     with app.app_context():

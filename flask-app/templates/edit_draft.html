@@ -32,6 +32,13 @@
         flex-wrap: wrap;
     }
 
+    .toolbar-center {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
     .toolbar-right {
         display: flex;
         gap: 8px;
@@ -48,13 +55,42 @@
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        min-width: 120px;
+        min-width: 140px;
     }
 
     .version-selector:focus {
         outline: none;
         border-color: var(--accent-green);
         box-shadow: 0 0 0 1px var(--accent-green);
+    }
+
+    .current-version-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .version-badge {
+        padding: 2px 6px;
+        background: var(--accent-green);
+        color: var(--bg-primary);
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 1px solid var(--accent-green);
+        box-shadow: 0 0 4px var(--accent-green);
+    }
+
+    .version-badge.final {
+        background: var(--accent-yellow);
+        border-color: var(--accent-yellow);
+        box-shadow: 0 0 4px var(--accent-yellow);
+        color: var(--bg-primary);
     }
 
     .save-status {
@@ -359,6 +395,7 @@
         }
 
         .toolbar-left,
+        .toolbar-center,
         .toolbar-right {
             justify-content: center;
         }
@@ -411,6 +448,31 @@
             <div class="save-indicator" id="saveIndicator"></div>
             <span id="saveStatus">Ready</span>
         </div>
+    </div>
+    
+    <div class="toolbar-center">
+        <div class="current-version-info">
+            <span>Current:</span>
+            <select id="versionSelector" class="version-selector" onchange="switchVersion(this.value)">
+                {% for version in versions %}
+                    <option value="{{ version.id }}" {% if version.id == current_version.id %}selected{% endif %}>
+                        {{ version.version_name }}
+                        {% if 'final' in version.version_name.lower() or 'published' in version.version_name.lower() %} [FINAL]{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if 'final' in current_version.version_name.lower() or 'published' in current_version.version_name.lower() %}
+                <span class="version-badge final">Final</span>
+            {% else %}
+                <span class="version-badge">Draft</span>
+            {% endif %}
+        </div>
+        
+        <button id="markFinalBtn" class="btn" style="background: var(--accent-yellow); color: var(--bg-primary); border-color: var(--accent-yellow);">
+            Mark as Final
+        </button>
+        
+        <button id="renameVersionBtn" class="btn">Rename Version</button>
     </div>
     
     <div class="toolbar-right">
@@ -494,6 +556,47 @@ Ready to begin? Start typing and watch the preview update in real-time!"
         </div>
     </div>
 </div>
+
+<!-- Rename Version Modal -->
+<div id="renameVersionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Rename Version</h3>
+            <button class="modal-close" id="closeRenameModalBtn">✕</button>
+        </div>
+        <div class="form-group">
+            <label for="renameVersionName">Version Name</label>
+            <input type="text" id="renameVersionName" placeholder="Enter new version name">
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="confirmRenameVersionBtn" class="btn primary">Rename</button>
+            <button id="cancelRenameVersionBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Mark as Final Modal -->
+<div id="markFinalModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Mark as Final</h3>
+            <button class="modal-close" id="closeFinalModalBtn">✕</button>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;">
+                This will rename the current version to include "Final" in the name and mark it as the definitive version.
+            </p>
+            <div class="form-group">
+                <label for="finalVersionName">Final Version Name</label>
+                <input type="text" id="finalVersionName" placeholder="e.g. Final Draft, Published Version">
+            </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="confirmMarkFinalBtn" class="btn" style="background: var(--accent-yellow); color: var(--bg-primary); border-color: var(--accent-yellow);">Mark as Final</button>
+            <button id="cancelMarkFinalBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -502,6 +605,27 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     let draftId = {{ draft.id }};
     let autoSaveTimeout;
     let lastSavedContent = document.getElementById('contentEditor').value;
+    
+    // Version switching
+    function switchVersion(versionId) {
+        if (versionId && versionId != currentVersionId) {
+            // Save current content before switching
+            const content = document.getElementById('contentEditor').value;
+            if (content !== lastSavedContent) {
+                if (confirm('You have unsaved changes. Save before switching versions?')) {
+                    fetch(`/save_version/${currentVersionId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: content })
+                    }).then(() => {
+                        window.location.href = `/draft/${draftId}?version=${versionId}`;
+                    });
+                    return;
+                }
+            }
+            window.location.href = `/draft/${draftId}?version=${versionId}`;
+        }
+    }
     
     // Save status management
     function updateSaveStatus(status, type = 'ready') {
@@ -594,26 +718,63 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     
     // Modal management
     const modal = document.getElementById('newVersionModal');
+    const renameModal = document.getElementById('renameVersionModal');
+    const finalModal = document.getElementById('markFinalModal');
     const newVersionBtn = document.getElementById('newVersionBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const cancelVersionBtn = document.getElementById('cancelVersionBtn');
+    const renameVersionBtn = document.getElementById('renameVersionBtn');
+    const markFinalBtn = document.getElementById('markFinalBtn');
     
+    // New version modal
     newVersionBtn.addEventListener('click', () => {
         modal.style.display = 'block';
         document.getElementById('newVersionName').focus();
     });
     
-    [closeModalBtn, cancelVersionBtn].forEach(btn => {
+    [document.getElementById('closeModalBtn'), document.getElementById('cancelVersionBtn')].forEach(btn => {
         btn.addEventListener('click', () => {
             modal.style.display = 'none';
             document.getElementById('newVersionName').value = '';
         });
     });
     
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
+    // Rename version modal
+    renameVersionBtn.addEventListener('click', () => {
+        const currentName = document.querySelector('#versionSelector option:checked').textContent.trim();
+        document.getElementById('renameVersionName').value = currentName.replace(' [FINAL]', '');
+        renameModal.style.display = 'block';
+        document.getElementById('renameVersionName').focus();
+    });
+    
+    [document.getElementById('closeRenameModalBtn'), document.getElementById('cancelRenameVersionBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            renameModal.style.display = 'none';
+            document.getElementById('renameVersionName').value = '';
+        });
+    });
+    
+    // Mark as final modal
+    markFinalBtn.addEventListener('click', () => {
+        const currentName = document.querySelector('#versionSelector option:checked').textContent.trim();
+        const suggestedName = currentName.includes('Final') ? currentName : currentName + ' - Final';
+        document.getElementById('finalVersionName').value = suggestedName.replace(' [FINAL]', '');
+        finalModal.style.display = 'block';
+        document.getElementById('finalVersionName').focus();
+    });
+    
+    [document.getElementById('closeFinalModalBtn'), document.getElementById('cancelMarkFinalBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            finalModal.style.display = 'none';
+            document.getElementById('finalVersionName').value = '';
+        });
+    });
+    
+    // Close modals on outside click
+    [modal, renameModal, finalModal].forEach(m => {
+        m.addEventListener('click', (e) => {
+            if (e.target === m) {
+                m.style.display = 'none';
+            }
+        });
     });
     
     document.getElementById('createVersionBtn').addEventListener('click', function() {

@@ -57,13 +57,34 @@
 
         /* Dithered Logo Component */
         .dithered-logo {
-            width: 120px;
-            height: 40px;
-            position: relative;
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .dithered-logo canvas {
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            position: relative;
+            display: block;
+        }
+
+        .logo-icon canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .logo-text {
+            width: 200px;
+            height: 32px;
+            position: relative;
+            display: block;
+        }
+
+        .logo-text canvas {
             width: 100%;
             height: 100%;
             image-rendering: pixelated;
@@ -104,10 +125,7 @@
         }
 
         .brand-text {
-            font-size: 18px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: none; /* Hide since we're using dithered text */
         }
 
         .nav-menu {
@@ -456,6 +474,44 @@
         .flex-between { justify-content: space-between; }
         .gap-1 { gap: 8px; }
         .gap-2 { gap: 16px; }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-primary);
+            padding: 16px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: auto;
+        }
+
+        .footer a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-shadow: var(--glow-primary);
+        }
+
+        .footer-heart {
+            color: var(--accent-red);
+            animation: pulse 2s infinite;
+        }
+
+        /* Body layout for footer */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            flex: 1;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -465,9 +521,13 @@
         <div class="nav-container">
             <a href="{% if session.user_id %}{{ url_for('dashboard') }}{% else %}{{ url_for('index') }}{% endif %}" class="nav-brand">
                 <div class="dithered-logo">
-                    <canvas id="logoCanvas"></canvas>
+                    <div class="logo-icon">
+                        <canvas id="logoIconCanvas"></canvas>
+                    </div>
+                    <div class="logo-text">
+                        <canvas id="logoTextCanvas"></canvas>
+                    </div>
                 </div>
-                <span class="brand-text">Draft Mode</span>
             </a>
             
             <button class="nav-toggle" id="navToggle">☰</button>
@@ -515,66 +575,101 @@
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="footer">
+        <div>
+            © 2025 Draft Mode • Made with <span class="footer-heart">♥</span> by 
+            <a href="#" target="_blank">Recommended Systems</a>
+        </div>
+    </footer>
+
     <script>
         // Dithered logo implementation
         class DitheredLogo {
-            constructor(canvas) {
-                this.canvas = canvas;
-                this.ctx = canvas.getContext('2d');
-                this.text = 'D';
-                this.fontSize = 24;
-                this.pixelSize = 3;
-                this.setupCanvas();
+            constructor(iconCanvas, textCanvas) {
+                this.iconCanvas = iconCanvas;
+                this.textCanvas = textCanvas;
+                this.iconCtx = iconCanvas.getContext('2d');
+                this.textCtx = textCanvas.getContext('2d');
+                
+                // Randomize parameters within narrow bands for each page load
+                this.iconPixelSize = 2 + Math.random() * 2; // 2-4px
+                this.textPixelSize = 3 + Math.random() * 2; // 3-5px
+                this.distortion = 0.85 + Math.random() * 0.2; // 0.85-1.05
+                
+                this.setupCanvases();
                 this.render();
             }
 
-            setupCanvas() {
+            setupCanvases() {
                 const dpr = window.devicePixelRatio || 1;
-                const rect = { width: 120, height: 40 };
                 
-                this.canvas.width = rect.width * dpr;
-                this.canvas.height = rect.height * dpr;
-                this.canvas.style.width = rect.width + 'px';
-                this.canvas.style.height = rect.height + 'px';
+                // Icon canvas setup
+                this.iconCanvas.width = 40 * dpr;
+                this.iconCanvas.height = 40 * dpr;
+                this.iconCanvas.style.width = '40px';
+                this.iconCanvas.style.height = '40px';
+                this.iconCtx.scale(dpr, dpr);
                 
-                this.ctx.scale(dpr, dpr);
-                this.ctx.font = `bold ${this.fontSize}px 'JetBrains Mono', monospace`;
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
+                // Text canvas setup
+                this.textCanvas.width = 200 * dpr;
+                this.textCanvas.height = 32 * dpr;
+                this.textCanvas.style.width = '200px';
+                this.textCanvas.style.height = '32px';
+                this.textCtx.scale(dpr, dpr);
             }
 
-            render() {
-                // Clear canvas
-                this.ctx.fillStyle = '#000000';
-                this.ctx.fillRect(0, 0, 120, 40);
+            renderIcon() {
+                this.iconCtx.fillStyle = '#000000';
+                this.iconCtx.fillRect(0, 0, 40, 40);
+                
+                // Create off-screen canvas for icon
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = 40;
+                tempCanvas.height = 40;
+                
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.font = 'bold 24px "JetBrains Mono", monospace';
+                tempCtx.textAlign = 'center';
+                tempCtx.textBaseline = 'middle';
+                tempCtx.fillText('D', 20, 20);
+                
+                this.applyDithering(tempCtx, this.iconCtx, 40, 40, this.iconPixelSize);
+            }
+
+            renderText() {
+                this.textCtx.fillStyle = '#000000';
+                this.textCtx.fillRect(0, 0, 200, 32);
                 
                 // Create off-screen canvas for text
-                const textCanvas = document.createElement('canvas');
-                const textCtx = textCanvas.getContext('2d');
-                textCanvas.width = 120;
-                textCanvas.height = 40;
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = 200;
+                tempCanvas.height = 32;
                 
-                // Render text
-                textCtx.fillStyle = '#ffffff';
-                textCtx.font = `bold ${this.fontSize}px 'JetBrains Mono', monospace`;
-                textCtx.textAlign = 'center';
-                textCtx.textBaseline = 'middle';
-                textCtx.fillText(this.text, 60, 20);
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.font = 'bold 16px "JetBrains Mono", monospace';
+                tempCtx.textAlign = 'left';
+                tempCtx.textBaseline = 'middle';
+                tempCtx.fillText('DRAFT MODE', 10, 16);
                 
-                // Get image data
-                const imageData = textCtx.getImageData(0, 0, 120, 40);
+                this.applyDithering(tempCtx, this.textCtx, 200, 32, this.textPixelSize);
+            }
+
+            applyDithering(sourceCtx, targetCtx, width, height, pixelSize) {
+                const imageData = sourceCtx.getImageData(0, 0, width, height);
                 const data = imageData.data;
                 
-                // Apply dithering
-                for (let y = 0; y < 40; y += this.pixelSize) {
-                    for (let x = 0; x < 120; x += this.pixelSize) {
+                for (let y = 0; y < height; y += Math.floor(pixelSize)) {
+                    for (let x = 0; x < width; x += Math.floor(pixelSize)) {
                         let brightness = 0;
                         let pixelCount = 0;
                         
                         // Sample pixels in block
-                        for (let dy = 0; dy < this.pixelSize && y + dy < 40; dy++) {
-                            for (let dx = 0; dx < this.pixelSize && x + dx < 120; dx++) {
-                                const idx = ((y + dy) * 120 + (x + dx)) * 4;
+                        for (let dy = 0; dy < Math.floor(pixelSize) && y + dy < height; dy++) {
+                            for (let dx = 0; dx < Math.floor(pixelSize) && x + dx < width; dx++) {
+                                const idx = ((y + dy) * width + (x + dx)) * 4;
                                 brightness += data[idx];
                                 pixelCount++;
                             }
@@ -582,24 +677,38 @@
                         
                         brightness /= pixelCount;
                         
-                        // Threshold with noise
-                        const noise = (Math.random() - 0.5) * 50;
-                        const threshold = 128 + noise;
+                        // Apply threshold with noise
+                        const noise = (Math.random() - 0.5) * 80;
+                        const threshold = 128 + noise * (1 - this.distortion);
                         
                         if (brightness > threshold) {
-                            this.ctx.fillStyle = '#00ff41';
-                            this.ctx.fillRect(x, y, this.pixelSize, this.pixelSize);
+                            targetCtx.fillStyle = '#00ff41';
+                            const offsetX = (Math.random() - 0.5) * 1 * (1 - this.distortion);
+                            const offsetY = (Math.random() - 0.5) * 1 * (1 - this.distortion);
+                            
+                            targetCtx.fillRect(
+                                x + offsetX, 
+                                y + offsetY, 
+                                Math.floor(pixelSize), 
+                                Math.floor(pixelSize)
+                            );
                         }
                     }
                 }
             }
+
+            render() {
+                this.renderIcon();
+                this.renderText();
+            }
         }
 
-        // Initialize logo
+        // Initialize logos
         document.addEventListener('DOMContentLoaded', function() {
-            const logoCanvas = document.getElementById('logoCanvas');
-            if (logoCanvas) {
-                new DitheredLogo(logoCanvas);
+            const iconCanvas = document.getElementById('logoIconCanvas');
+            const textCanvas = document.getElementById('logoTextCanvas');
+            if (iconCanvas && textCanvas) {
+                new DitheredLogo(iconCanvas, textCanvas);
             }
 
             // Mobile menu toggle
@@ -625,13 +734,40 @@
 
             document.querySelector('.window-control.maximize')?.addEventListener('click', () => {
                 const window = document.querySelector('.window');
-                window.style.position = window.style.position === 'fixed' ? 'relative' : 'fixed';
-                window.style.top = window.style.position === 'fixed' ? '0' : 'auto';
-                window.style.left = window.style.position === 'fixed' ? '0' : 'auto';
-                window.style.right = window.style.position === 'fixed' ? '0' : 'auto';
-                window.style.bottom = window.style.position === 'fixed' ? '0' : 'auto';
-                window.style.zIndex = window.style.position === 'fixed' ? '999' : 'auto';
-                window.style.transition = 'all 0.3s ease';
+                const isMaximized = window.getAttribute('data-maximized') === 'true';
+                
+                if (!isMaximized) {
+                    // Store original styles
+                    window.setAttribute('data-original-position', window.style.position || '');
+                    window.setAttribute('data-original-top', window.style.top || '');
+                    window.setAttribute('data-original-left', window.style.left || '');
+                    window.setAttribute('data-original-right', window.style.right || '');
+                    window.setAttribute('data-original-bottom', window.style.bottom || '');
+                    window.setAttribute('data-original-z-index', window.style.zIndex || '');
+                    window.setAttribute('data-original-margin', window.style.margin || '');
+                    
+                    // Maximize
+                    window.style.position = 'fixed';
+                    window.style.top = '0';
+                    window.style.left = '0';
+                    window.style.right = '0';
+                    window.style.bottom = '0';
+                    window.style.zIndex = '999';
+                    window.style.margin = '0';
+                    window.style.transition = 'all 0.3s ease';
+                    window.setAttribute('data-maximized', 'true');
+                } else {
+                    // Restore original styles
+                    window.style.position = window.getAttribute('data-original-position');
+                    window.style.top = window.getAttribute('data-original-top');
+                    window.style.left = window.getAttribute('data-original-left');
+                    window.style.right = window.getAttribute('data-original-right');
+                    window.style.bottom = window.getAttribute('data-original-bottom');
+                    window.style.zIndex = window.getAttribute('data-original-z-index');
+                    window.style.margin = window.getAttribute('data-original-margin');
+                    window.style.transition = 'all 0.3s ease';
+                    window.setAttribute('data-maximized', 'false');
+                }
             });
         });
     </script>

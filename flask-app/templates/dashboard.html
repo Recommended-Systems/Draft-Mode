@@ -89,10 +89,10 @@
         text-shadow: var(--glow-primary);
     }
 
-    .drafts-grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    .drafts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
     .draft-card {
@@ -102,6 +102,10 @@
         position: relative;
         transition: all 0.3s ease;
         overflow: hidden;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 20px;
     }
 
     .draft-card::before {
@@ -127,19 +131,22 @@
     }
 
     .draft-header {
+        flex: 1;
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 12px;
+        flex-direction: column;
+        gap: 8px;
     }
 
     .draft-title {
         font-size: 16px;
         font-weight: 700;
         color: var(--text-primary);
-        margin: 0 0 8px 0;
+        margin: 0;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .draft-status {
@@ -157,21 +164,19 @@
     .draft-description {
         color: var(--text-secondary);
         font-size: 12px;
-        line-height: 1.5;
-        margin-bottom: 16px;
-        min-height: 36px;
+        line-height: 1.4;
+        margin: 0;
     }
 
     .draft-meta {
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 16px;
         font-size: 10px;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-top: 1px solid var(--border-primary);
-        padding-top: 12px;
+        flex-shrink: 0;
     }
 
     .draft-versions {
@@ -186,6 +191,55 @@
         background: var(--accent-green);
         border: 1px solid var(--bg-primary);
         box-shadow: 0 0 2px var(--accent-green);
+    }
+
+    .draft-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .version-selector {
+        padding: 4px 8px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 100px;
+    }
+
+    .version-selector:focus {
+        outline: none;
+        border-color: var(--accent-green);
+        box-shadow: 0 0 0 1px var(--accent-green);
+    }
+
+    .action-btn {
+        padding: 4px 8px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-secondary);
+        font-size: 10px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        background: var(--accent-green);
+        color: var(--bg-primary);
+        border-color: var(--accent-green);
+    }
+
+    .action-btn.rename { 
+        background: var(--accent-blue); 
+        border-color: var(--accent-blue); 
+        color: var(--text-primary); 
     }
 
     .empty-state {
@@ -232,14 +286,20 @@
             grid-template-columns: 1fr;
         }
 
-        .drafts-grid {
-            grid-template-columns: 1fr;
+        .draft-card {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
         }
 
         .draft-meta {
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 8px;
-            align-items: flex-start;
+        }
+
+        .draft-actions {
+            justify-content: center;
+            flex-wrap: wrap;
         }
     }
 
@@ -255,6 +315,63 @@
 
     .title-icon:hover {
         animation: glitch 0.3s ease-in-out;
+    }
+
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-primary);
+        padding: 24px;
+        min-width: 300px;
+        max-width: 90vw;
+        box-shadow: 0 8px 32px rgba(0, 255, 65, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-primary);
+    }
+
+    .modal-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-primary);
+    }
+
+    .modal-close {
+        background: none;
+        border: 1px solid var(--border-primary);
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .modal-close:hover {
+        color: var(--accent-red);
+        border-color: var(--accent-red);
     }
 </style>
 {% endblock %}
@@ -283,6 +400,11 @@
                 {% set total_versions = total_versions + draft.versions|length %}
             {% endfor %}
             {{ total_versions }}
+            {% if drafts|length > 0 %}
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
+                    ({{ "%.1f"|format(total_versions / drafts|length) }} avg)
+                </span>
+            {% endif %}
         </div>
     </div>
     <div class="stat-card">
@@ -292,27 +414,37 @@
 </div>
 
 {% if drafts %}
-    <div class="drafts-grid">
+    <div class="drafts-list">
         {% for draft in drafts %}
         <div class="draft-card">
             <div class="draft-header">
-                <div>
-                    <h3 class="draft-title">{{ draft.title }}</h3>
+                <div class="draft-title">
+                    {{ draft.title }}
                     {% if draft.versions %}
-                        <div class="draft-status">Active</div>
+                        {% set has_final = false %}
+                        {% for version in draft.versions %}
+                            {% if 'final' in version.version_name.lower() or 'published' in version.version_name.lower() %}
+                                {% set has_final = true %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if has_final %}
+                            <span class="draft-status" style="background: var(--accent-yellow); color: var(--bg-primary);">Final</span>
+                        {% else %}
+                            <span class="draft-status">Active</span>
+                        {% endif %}
                     {% else %}
-                        <div class="draft-status" style="background: var(--accent-yellow); color: var(--bg-primary);">Empty</div>
+                        <span class="draft-status" style="background: var(--accent-red); color: var(--text-primary);">Empty</span>
                     {% endif %}
                 </div>
+                
+                {% if draft.description %}
+                    <div class="draft-description">{{ draft.description }}</div>
+                {% else %}
+                    <div class="draft-description" style="font-style: italic; color: var(--text-muted);">
+                        No description provided
+                    </div>
+                {% endif %}
             </div>
-            
-            {% if draft.description %}
-                <div class="draft-description">{{ draft.description }}</div>
-            {% else %}
-                <div class="draft-description" style="font-style: italic; color: var(--text-muted);">
-                    No description provided
-                </div>
-            {% endif %}
             
             <div class="draft-meta">
                 <div class="draft-versions">
@@ -320,6 +452,24 @@
                     <div class="version-indicator"></div>
                 </div>
                 <div>Updated {{ draft.updated_at.strftime('%m/%d/%Y') }}</div>
+            </div>
+            
+            <div class="draft-actions">
+                {% if draft.versions|length > 0 %}
+                    <select class="version-selector" onchange="editVersion({{ draft.id }}, this.value)">
+                        <option value="">Select version...</option>
+                        {% for version in draft.versions %}
+                            <option value="{{ version.id }}" {% if version.is_current %}selected{% endif %}>
+                                {{ version.version_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+                
+                <button class="action-btn rename" onclick="renameDraft({{ draft.id }}, '{{ draft.title }}')">
+                    Rename
+                </button>
+                
                 <a href="{{ url_for('edit_draft', draft_id=draft.id) }}" class="btn" style="font-size: 10px; padding: 4px 8px;">
                     Edit ►
                 </a>
@@ -334,4 +484,79 @@
         <a href="{{ url_for('create_draft') }}" class="btn primary">Initialize First Draft</a>
     </div>
 {% endif %}
+
+<!-- Rename Draft Modal -->
+<div id="renameDraftModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Rename Draft</h3>
+            <button class="modal-close" onclick="closeModal('renameDraftModal')">✕</button>
+        </div>
+        <div class="form-group">
+            <label for="newDraftName">Draft Name</label>
+            <input type="text" id="newDraftName" placeholder="Enter new draft name">
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="confirmRenameDraft" class="btn primary">Rename</button>
+            <button onclick="closeModal('renameDraftModal')" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentDraftId = null;
+
+    function editVersion(draftId, versionId) {
+        if (versionId) {
+            window.location.href = `/draft/${draftId}?version=${versionId}`;
+        }
+    }
+
+    function renameDraft(draftId, currentName) {
+        currentDraftId = draftId;
+        document.getElementById('newDraftName').value = currentName;
+        document.getElementById('renameDraftModal').style.display = 'block';
+        document.getElementById('newDraftName').focus();
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        currentDraftId = null;
+    }
+
+    // Handle rename draft
+    document.getElementById('confirmRenameDraft').addEventListener('click', function() {
+        const newName = document.getElementById('newDraftName').value.trim();
+        if (!newName || !currentDraftId) return;
+
+        fetch(`/rename_draft/${currentDraftId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to rename draft');
+            }
+        })
+        .catch(() => alert('Error renaming draft'));
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal('renameDraftModal');
+        }
+    });
+
+    // Close modals when clicking outside
+    document.getElementById('renameDraftModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal('renameDraftModal');
+        }
+    });
+</script>
 {% endblock %}
