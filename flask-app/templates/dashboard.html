@@ -12,6 +12,11 @@
 
 {% block extra_css %}
 <style>
+    /* Make dashboard wider */
+    .main-container {
+        max-width: 1400px; /* Increased from 1200px */
+    }
+
     .dashboard-header {
         display: flex;
         justify-content: space-between;
@@ -103,9 +108,10 @@
         transition: all 0.3s ease;
         overflow: hidden;
         width: 100%;
-        display: flex;
-        align-items: center;
+        display: grid;
+        grid-template-columns: 1fr auto auto auto; /* Changed to grid layout */
         gap: 20px;
+        align-items: center;
     }
 
     .draft-card::before {
@@ -135,6 +141,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
+        min-width: 0; /* Prevent overflow */
     }
 
     .draft-title {
@@ -147,18 +154,40 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        word-break: break-word;
     }
 
     .draft-status {
         padding: 2px 6px;
-        background: var(--accent-green);
-        color: var(--bg-primary);
         font-size: 8px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border: 1px solid var(--accent-green);
+        border: 1px solid;
+        box-shadow: 0 0 4px;
+        flex-shrink: 0;
+    }
+
+    /* Switched badge colors - Final is now green, Active is yellow */
+    .draft-status.final {
+        background: var(--accent-green);
+        color: var(--bg-primary);
+        border-color: var(--accent-green);
         box-shadow: 0 0 4px var(--accent-green);
+    }
+
+    .draft-status.active {
+        background: var(--accent-yellow);
+        color: var(--bg-primary);
+        border-color: var(--accent-yellow);
+        box-shadow: 0 0 4px var(--accent-yellow);
+    }
+
+    .draft-status.empty {
+        background: var(--accent-red);
+        color: var(--text-primary);
+        border-color: var(--accent-red);
+        box-shadow: 0 0 4px var(--accent-red);
     }
 
     .draft-description {
@@ -170,13 +199,15 @@
 
     .draft-meta {
         display: flex;
-        align-items: center;
-        gap: 16px;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
         font-size: 10px;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         flex-shrink: 0;
+        min-width: 120px;
     }
 
     .draft-versions {
@@ -196,8 +227,9 @@
     .draft-actions {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         flex-shrink: 0;
+        min-width: 200px; /* Ensure enough space */
     }
 
     .version-selector {
@@ -209,7 +241,8 @@
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        min-width: 100px;
+        min-width: 120px;
+        flex-shrink: 0;
     }
 
     .version-selector:focus {
@@ -219,15 +252,22 @@
     }
 
     .action-btn {
-        padding: 4px 8px;
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-primary);
-        color: var(--text-secondary);
+        padding: 6px 12px;
+        border: 1px solid;
+        color: var(--text-primary);
         font-size: 10px;
         cursor: pointer;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         transition: all 0.2s ease;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        background: var(--bg-primary);
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        min-width: 60px;
+        flex-shrink: 0;
     }
 
     .action-btn:hover {
@@ -237,9 +277,22 @@
     }
 
     .action-btn.rename { 
-        background: var(--accent-blue); 
-        border-color: var(--accent-blue); 
-        color: var(--text-primary); 
+        background: var(--bg-primary);
+        border-color: var(--accent-green); 
+        color: var(--text-primary);
+    }
+
+    .action-btn.rename:hover {
+        background: var(--accent-green);
+        color: var(--bg-primary);
+    }
+
+    .btn.edit-btn {
+        padding: 6px 12px;
+        font-size: 10px;
+        min-width: 50px;
+        text-align: center;
+        flex-shrink: 0;
     }
 
     .empty-state {
@@ -287,19 +340,25 @@
         }
 
         .draft-card {
-            flex-direction: column;
-            align-items: stretch;
+            grid-template-columns: 1fr;
             gap: 12px;
         }
 
         .draft-meta {
+            align-items: flex-start;
+            flex-direction: row;
             flex-wrap: wrap;
             gap: 8px;
         }
 
         .draft-actions {
-            justify-content: center;
+            justify-content: flex-start;
             flex-wrap: wrap;
+            min-width: auto;
+        }
+
+        .version-selector {
+            min-width: 100px;
         }
     }
 
@@ -428,12 +487,12 @@
                             {% endif %}
                         {% endfor %}
                         {% if has_final %}
-                            <span class="draft-status" style="background: var(--accent-yellow); color: var(--bg-primary);">Final</span>
+                            <span class="draft-status final">Final</span>
                         {% else %}
-                            <span class="draft-status">Active</span>
+                            <span class="draft-status active">Active</span>
                         {% endif %}
                     {% else %}
-                        <span class="draft-status" style="background: var(--accent-red); color: var(--text-primary);">Empty</span>
+                        <span class="draft-status empty">Empty</span>
                     {% endif %}
                 </div>
                 
@@ -469,8 +528,10 @@
                 <button class="action-btn rename" onclick="renameDraft({{ draft.id }}, '{{ draft.title }}')">
                     Rename
                 </button>
-                
-                <a href="{{ url_for('edit_draft', draft_id=draft.id) }}" class="btn" style="font-size: 10px; padding: 4px 8px;">
+            </div>
+
+            <div>
+                <a href="{{ url_for('edit_draft', draft_id=draft.id) }}" class="btn edit-btn">
                     Edit ►
                 </a>
             </div>

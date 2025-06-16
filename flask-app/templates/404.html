@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block window_title %}404 - Page Not Found{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        text-align: center;
+        padding: 60px 20px;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .error-code {
+        font-size: 72px;
+        font-weight: 700;
+        color: var(--accent-red);
+        text-shadow: 0 0 20px var(--accent-red);
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        animation: glitch-error 2s infinite;
+    }
+
+    @keyframes glitch-error {
+        0%, 100% { transform: translate(0); }
+        10% { transform: translate(-2px, 2px); }
+        20% { transform: translate(2px, -2px); }
+        30% { transform: translate(-2px, -2px); }
+        40% { transform: translate(2px, 2px); }
+        50% { transform: translate(-2px, 2px); }
+        60% { transform: translate(2px, -2px); }
+        70% { transform: translate(-2px, -2px); }
+        80% { transform: translate(2px, 2px); }
+        90% { transform: translate(-2px, 2px); }
+    }
+
+    .error-title {
+        font-size: 24px;
+        color: var(--accent-red);
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .error-message {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 32px;
+        max-width: 500px;
+        line-height: 1.6;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .error-graphic {
+        width: 120px;
+        height: 120px;
+        background: var(--bg-tertiary);
+        border: 2px solid var(--accent-red);
+        margin: 0 auto 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .error-graphic::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, var(--accent-red), transparent, var(--accent-red));
+        z-index: -1;
+        animation: rotate 3s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .scan-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--accent-red);
+        box-shadow: 0 0 10px var(--accent-red);
+        animation: scan 2s ease-in-out infinite;
+    }
+
+    @keyframes scan {
+        0%, 100% { transform: translateY(0); opacity: 1; }
+        50% { transform: translateY(116px); opacity: 0.5; }
+    }
+
+    @media (max-width: 768px) {
+        .error-code {
+            font-size: 48px;
+        }
+        
+        .error-title {
+            font-size: 18px;
+        }
+        
+        .error-message {
+            font-size: 12px;
+        }
+        
+        .error-graphic {
+            width: 80px;
+            height: 80px;
+            font-size: 32px;
+        }
+        
+        .error-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .btn {
+            width: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-graphic">
+        💀
+        <div class="scan-line"></div>
+    </div>
+    
+    <div class="error-code">404</div>
+    
+    <h1 class="error-title">System Error: Page Not Found</h1>
+    
+    <p class="error-message">
+        The requested resource could not be located in the system database. 
+        The page you're looking for might have been moved, deleted, or the URL might be incorrect.
+        Please check the address and try again.
+    </p>
+    
+    <div class="error-actions">
+        <a href="{% if session.user_id %}{{ url_for('dashboard') }}{% else %}{{ url_for('index') }}{% endif %}" class="btn primary">
+            ← Return to {{ 'Dashboard' if session.user_id else 'Home' }}
+        </a>
+        
+        {% if session.user_id %}
+            <a href="{{ url_for('create_draft') }}" class="btn">
+                Create New Draft
+            </a>
+        {% else %}
+            <a href="{{ url_for('signup') }}" class="btn">
+                Sign Up
+            </a>
+        {% endif %}
+        
+        <button onclick="history.back()" class="btn">
+            Go Back
+        </button>
+    </div>
+</div>
+{% endblock %}

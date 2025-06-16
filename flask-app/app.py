@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import markdown
 from markupsafe import Markup
+import secrets
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
@@ -43,6 +44,7 @@ class DraftVersion(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_current = db.Column(db.Boolean, default=False)
+    share_token = db.Column(db.String(32), unique=True, nullable=True)  # For public sharing
 
 # Helper functions
 def login_required(f):
@@ -333,6 +335,10 @@ def mark_final(version_id):
     version.version_name = final_name
     version.updated_at = datetime.utcnow()
     
+    # Generate a share token if it doesn't exist
+    if not version.share_token:
+        version.share_token = secrets.token_urlsafe(16)
+    
     # Update the parent draft's updated_at timestamp
     version.blog_draft.updated_at = datetime.utcnow()
     
@@ -458,6 +464,41 @@ def get_draft_stats(draft_id):
     }
     
     return jsonify(stats)
+
+# NEW ROUTE FOR PUBLIC SHARING
+@app.route('/share/<share_token>')
+def public_view(share_token):
+    """View a publicly shared version without authentication"""
+    version = DraftVersion.query.filter_by(share_token=share_token).first_or_404()
+    
+    try:
+        html_content = markdown.markdown(version.content, extensions=['extra', 'codehilite', 'fenced_code'])
+    except:
+        html_content = markdown.markdown(version.content)
+    
+    return render_template('public_view.html', 
+                         version=version, 
+                         draft=version.blog_draft,
+                         author=version.blog_draft.author,
+                         html_content=Markup(html_content))
+
+@app.route('/generate_share_link/<int:version_id>', methods=['POST'])
+@login_required
+def generate_share_link(version_id):
+    """Generate a public share link for a version"""
+    user = get_current_user()
+    version = DraftVersion.query.join(BlogDraft).filter(
+        DraftVersion.id == version_id,
+        BlogDraft.user_id == user.id
+    ).first_or_404()
+    
+    # Generate share token if it doesn't exist
+    if not version.share_token:
+        version.share_token = secrets.token_urlsafe(16)
+        db.session.commit()
+    
+    share_url = url_for('public_view', share_token=version.share_token, _external=True)
+    return jsonify({'success': True, 'share_url': share_url})
 
 # Error handlers
 @app.errorhandler(404)

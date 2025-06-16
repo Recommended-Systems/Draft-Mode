@@ -76,20 +76,25 @@
 
     .version-badge {
         padding: 2px 6px;
-        background: var(--accent-green);
-        color: var(--bg-primary);
         font-size: 8px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border: 1px solid var(--accent-green);
-        box-shadow: 0 0 4px var(--accent-green);
+        border: 1px solid;
+        box-shadow: 0 0 4px;
+    }
+
+    .version-badge.active {
+        background: var(--accent-yellow);
+        color: var(--bg-primary);
+        border-color: var(--accent-yellow);
+        box-shadow: 0 0 4px var(--accent-yellow);
     }
 
     .version-badge.final {
-        background: var(--accent-yellow);
-        border-color: var(--accent-yellow);
-        box-shadow: 0 0 4px var(--accent-yellow);
+        background: var(--accent-green);
+        border-color: var(--accent-green);
+        box-shadow: 0 0 4px var(--accent-green);
         color: var(--bg-primary);
     }
 
@@ -436,6 +441,16 @@
         0% { left: -100%; }
         100% { left: 100%; }
     }
+
+    .share-link-display {
+        margin-top: 12px;
+        padding: 8px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        font-size: 10px;
+        color: var(--text-secondary);
+        word-break: break-all;
+    }
 </style>
 {% endblock %}
 
@@ -464,7 +479,7 @@
             {% if 'final' in current_version.version_name.lower() or 'published' in current_version.version_name.lower() %}
                 <span class="version-badge final">Final</span>
             {% else %}
-                <span class="version-badge">Draft</span>
+                <span class="version-badge active">Draft</span>
             {% endif %}
         </div>
         
@@ -485,6 +500,7 @@
                 {% endif %}
             {% endfor %}
         </select>
+        <button id="shareBtn" class="btn">Share</button>
         <a href="{{ url_for('dashboard') }}" class="btn">← Dashboard</a>
     </div>
 </div>
@@ -594,6 +610,30 @@ Ready to begin? Start typing and watch the preview update in real-time!"
         <div style="margin-top: 20px; display: flex; gap: 8px;">
             <button id="confirmMarkFinalBtn" class="btn" style="background: var(--accent-yellow); color: var(--bg-primary); border-color: var(--accent-yellow);">Mark as Final</button>
             <button id="cancelMarkFinalBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Share Version</h3>
+            <button class="modal-close" id="closeShareModalBtn">✕</button>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;">
+                Generate a public link to share this version with others. Anyone with the link can view it without logging in.
+            </p>
+            <div id="shareLinkContainer" style="display: none;">
+                <label>Share Link:</label>
+                <div class="share-link-display" id="shareLink"></div>
+                <button id="copyLinkBtn" class="btn" style="margin-top: 8px;">Copy Link</button>
+            </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="generateShareLinkBtn" class="btn primary">Generate Share Link</button>
+            <button id="cancelShareBtn" class="btn">Cancel</button>
         </div>
     </div>
 </div>
@@ -720,9 +760,11 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     const modal = document.getElementById('newVersionModal');
     const renameModal = document.getElementById('renameVersionModal');
     const finalModal = document.getElementById('markFinalModal');
+    const shareModal = document.getElementById('shareModal');
     const newVersionBtn = document.getElementById('newVersionBtn');
     const renameVersionBtn = document.getElementById('renameVersionBtn');
     const markFinalBtn = document.getElementById('markFinalBtn');
+    const shareBtn = document.getElementById('shareBtn');
     
     // New version modal
     newVersionBtn.addEventListener('click', () => {
@@ -768,8 +810,21 @@ Ready to begin? Start typing and watch the preview update in real-time!"
         });
     });
     
+    // Share modal
+    shareBtn.addEventListener('click', () => {
+        shareModal.style.display = 'block';
+        document.getElementById('shareLinkContainer').style.display = 'none';
+    });
+    
+    [document.getElementById('closeShareModalBtn'), document.getElementById('cancelShareBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            shareModal.style.display = 'none';
+            document.getElementById('shareLinkContainer').style.display = 'none';
+        });
+    });
+    
     // Close modals on outside click
-    [modal, renameModal, finalModal].forEach(m => {
+    [modal, renameModal, finalModal, shareModal].forEach(m => {
         m.addEventListener('click', (e) => {
             if (e.target === m) {
                 m.style.display = 'none';
@@ -777,6 +832,7 @@ Ready to begin? Start typing and watch the preview update in real-time!"
         });
     });
     
+    // Create version
     document.getElementById('createVersionBtn').addEventListener('click', function() {
         const versionName = document.getElementById('newVersionName').value.trim();
         if (!versionName) {
@@ -798,6 +854,90 @@ Ready to begin? Start typing and watch the preview update in real-time!"
             if (data.success) {
                 location.reload();
             }
+        });
+    });
+    
+    // Rename version
+    document.getElementById('confirmRenameVersionBtn').addEventListener('click', function() {
+        const newName = document.getElementById('renameVersionName').value.trim();
+        if (!newName) {
+            alert('Please enter a version name');
+            return;
+        }
+        
+        fetch(`/rename_version/${currentVersionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to rename version');
+            }
+        });
+    });
+    
+    // Mark as final
+    document.getElementById('confirmMarkFinalBtn').addEventListener('click', function() {
+        const finalName = document.getElementById('finalVersionName').value.trim();
+        if (!finalName) {
+            alert('Please enter a final version name');
+            return;
+        }
+        
+        fetch(`/mark_final/${currentVersionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: finalName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to mark as final: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to mark as final');
+        });
+    });
+    
+    // Generate share link
+    document.getElementById('generateShareLinkBtn').addEventListener('click', function() {
+        fetch(`/generate_share_link/${currentVersionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('shareLink').textContent = data.share_url;
+                document.getElementById('shareLinkContainer').style.display = 'block';
+            } else {
+                alert('Failed to generate share link');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to generate share link');
+        });
+    });
+    
+    // Copy link
+    document.getElementById('copyLinkBtn').addEventListener('click', function() {
+        const shareLink = document.getElementById('shareLink').textContent;
+        navigator.clipboard.writeText(shareLink).then(() => {
+            this.textContent = 'Copied!';
+            setTimeout(() => {
+                this.textContent = 'Copy Link';
+            }, 2000);
+        }).catch(() => {
+            alert('Failed to copy link to clipboard');
         });
     });
     

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ draft.title }} - {{ version.version_name }} | Draft Mode</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* High contrast color scheme */
+            --bg-primary: #000000;
+            --bg-secondary: #111111;
+            --bg-tertiary: #222222;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --border-primary: #333333;
+            --border-secondary: #555555;
+            
+            /* Accent colors for interactive elements */
+            --accent-green: #00ff41;
+            --accent-red: #ff073a;
+            --accent-yellow: #ffdd00;
+            --accent-blue: #0099ff;
+            --accent-purple: #9d4edd;
+            
+            /* LED/Pixel effects */
+            --glow-primary: 0 0 10px var(--accent-green);
+            --scan-lines: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.03) 2px,
+                rgba(255, 255, 255, 0.03) 4px
+            );
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            background-image: var(--scan-lines);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-primary);
+            padding: 16px 0;
+            box-shadow: 0 2px 0 var(--accent-green);
+        }
+
+        .header-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .draft-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-shadow: var(--glow-primary);
+        }
+
+        .draft-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .version-badge {
+            padding: 4px 8px;
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--accent-green);
+            box-shadow: 0 0 4px var(--accent-green);
+        }
+
+        .cta-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+            box-shadow: var(--glow-primary);
+        }
+
+        .btn.primary {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+        }
+
+        .btn.primary:hover {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+        }
+
+        .main-content {
+            flex: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+        }
+
+        .article-container {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-primary);
+            position: relative;
+            box-shadow: 
+                inset 0 0 0 1px var(--border-secondary),
+                0 4px 0 var(--bg-tertiary);
+        }
+
+        .article-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--accent-green) 0%, transparent 50%, var(--accent-green) 100%);
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .article-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-primary);
+            height: 32px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            position: relative;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border: 1px solid var(--border-primary);
+            cursor: pointer;
+        }
+
+        .window-control.close { background: var(--accent-red); }
+        .window-control.minimize { background: var(--accent-yellow); }
+        .window-control.maximize { background: var(--accent-green); }
+
+        .window-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .article-content {
+            padding: 40px;
+            background: var(--bg-primary);
+            min-height: 400px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        /* Article styling */
+        .article-content h1,
+        .article-content h2,
+        .article-content h3,
+        .article-content h4,
+        .article-content h5,
+        .article-content h6 {
+            color: var(--accent-green);
+            margin: 32px 0 16px 0;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-shadow: var(--glow-primary);
+        }
+
+        .article-content h1 { 
+            font-size: 32px; 
+            border-bottom: 3px solid var(--accent-green); 
+            padding-bottom: 12px;
+            margin-top: 0;
+        }
+        .article-content h2 { font-size: 24px; }
+        .article-content h3 { font-size: 20px; }
+        .article-content h4 { font-size: 18px; }
+
+        .article-content p {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .article-content code {
+            background: var(--bg-tertiary);
+            color: var(--accent-green);
+            padding: 3px 8px;
+            border: 1px solid var(--border-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            border-radius: 0;
+        }
+
+        .article-content pre {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-primary);
+            padding: 20px;
+            overflow-x: auto;
+            margin: 24px 0;
+            position: relative;
+        }
+
+        .article-content pre::before {
+            content: 'CODE';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .article-content pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: var(--text-primary);
+        }
+
+        .article-content blockquote {
+            border-left: 4px solid var(--accent-green);
+            padding-left: 20px;
+            margin: 24px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+            background: var(--bg-secondary);
+            padding: 16px 20px;
+        }
+
+        .article-content ul, .article-content ol {
+            margin: 20px 0;
+            padding-left: 24px;
+        }
+
+        .article-content li {
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .article-content a {
+            color: var(--accent-green);
+            text-decoration: none;
+            border-bottom: 1px solid var(--accent-green);
+            transition: all 0.2s ease;
+        }
+
+        .article-content a:hover {
+            text-shadow: var(--glow-primary);
+            border-bottom-color: transparent;
+        }
+
+        .footer-cta {
+            background: var(--bg-secondary);
+            border-top: 2px solid var(--border-primary);
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 -2px 0 var(--accent-green);
+        }
+
+        .footer-cta-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .footer-cta h3 {
+            font-size: 18px;
+            color: var(--accent-green);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-shadow: var(--glow-primary);
+        }
+
+        .footer-cta p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer-cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .footer {
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-primary);
+            padding: 16px 20px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-shadow: var(--glow-primary);
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .cta-section {
+                justify-content: center;
+            }
+
+            .main-content {
+                padding: 20px 10px;
+            }
+
+            .article-content {
+                padding: 20px;
+                font-size: 14px;
+            }
+
+            .article-content h1 { font-size: 24px; }
+            .article-content h2 { font-size: 20px; }
+            .article-content h3 { font-size: 18px; }
+
+            .footer-cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 200px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="header-info">
+                <h1 class="draft-title">{{ draft.title }}</h1>
+                <div class="draft-meta">
+                    <span>Version: {{ version.version_name }}</span>
+                    <span>By {{ author.name }}</span>
+                    <span>Updated {{ version.updated_at.strftime('%B %d, %Y') }}</span>
+                    {% if 'final' in version.version_name.lower() or 'published' in version.version_name.lower() %}
+                        <span class="version-badge">Final Version</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="cta-section">
+                <a href="{{ url_for('signup') }}" class="btn primary">Start Writing</a>
+                <a href="{{ url_for('login') }}" class="btn">Sign In</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <article class="article-container">
+            <div class="article-header">
+                <div class="window-controls">
+                    <div class="window-control close"></div>
+                    <div class="window-control minimize"></div>
+                    <div class="window-control maximize"></div>
+                </div>
+                <div class="window-title">{{ version.version_name }}</div>
+            </div>
+            
+            <div class="article-content">
+                {{ html_content }}
+            </div>
+        </article>
+    </main>
+
+    <section class="footer-cta">
+        <div class="footer-cta-container">
+            <h3>🚀 Create Your Own Drafts</h3>
+            <p>
+                This post was created with Draft Mode - the retro-styled blog draft management system. 
+                Keep track of multiple versions, compare changes, and share your work with others.
+            </p>
+            <div class="footer-cta-buttons">
+                <a href="{{ url_for('signup') }}" class="btn primary">Sign Up Free</a>
+                <a href="{{ url_for('index') }}" class="btn">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div>
+            Powered by <a href="{{ url_for('index') }}">Draft Mode</a> • 
+            Made with ♥ by Recommended Systems
+        </div>
+    </footer>
+
+    <script>
+        // Fun window control interactions (disabled for public view)
+        document.querySelector('.window-control.close')?.addEventListener('click', () => {
+            if (confirm('Close this article? You\'ll be redirected to Draft Mode.')) {
+                window.location.href = '{{ url_for("index") }}';
+            }
+        });
+
+        document.querySelector('.window-control.minimize')?.addEventListener('click', () => {
+            const content = document.querySelector('.article-content');
+            content.style.transform = content.style.transform === 'scale(0.1)' ? 'scale(1)' : 'scale(0.1)';
+            content.style.transition = 'transform 0.3s ease';
+        });
+
+        document.querySelector('.window-control.maximize')?.addEventListener('click', () => {
+            const article = document.querySelector('.article-container');
+            const isMaximized = article.getAttribute('data-maximized') === 'true';
+            
+            if (!isMaximized) {
+                article.style.position = 'fixed';
+                article.style.top = '0';
+                article.style.left = '0';
+                article.style.right = '0';
+                article.style.bottom = '0';
+                article.style.zIndex = '999';
+                article.style.margin = '0';
+                article.style.transition = 'all 0.3s ease';
+                article.setAttribute('data-maximized', 'true');
+            } else {
+                article.style.position = '';
+                article.style.top = '';
+                article.style.left = '';
+                article.style.right = '';
+                article.style.bottom = '';
+                article.style.zIndex = '';
+                article.style.margin = '';
+                article.setAttribute('data-maximized', 'false');
+            }
+        });
+    </script>
+</body>
+</html>
