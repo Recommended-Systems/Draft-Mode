@@ -1,9 +1,6 @@
 /* Compare page styles with improved GitHub-like diff colors */
 .compare-container {
-    display: flex;
-    gap: 2px;
-    background: var(--bg-primary);
-    height: calc(100vh - 200px);
+    display: none !important;
 }
 
 .compare-panel {
@@ -59,7 +56,7 @@
 }
 
 .diff-container {
-    margin-top: 20px;
+    margin-top: 0; /* Remove top margin since we're hiding the compare panels */
     background: var(--bg-primary);
     border: 3px inset var(--bg-secondary);
     border-color: var(--border-primary) var(--text-primary) var(--text-primary) var(--border-primary);
@@ -68,15 +65,83 @@
 
 .diff-header {
     background: var(--bg-tertiary);
-    padding: 8px 16px;
+    padding: 12px 16px; /* Slightly more padding */
     border-bottom: 2px solid var(--border-primary);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: space-between;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.diff-content::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-primary);
+    z-index: 1;
+}
+
+.diff-side-header {
+    background: var(--bg-tertiary);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-primary);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.diff-side-header.older {
+    border-right: 1px solid var(--border-primary);
+}
+
+.version-label {
+    color: var(--text-primary);
+}
+
+.version-badge-small {
+    padding: 2px 6px;
+    background: var(--accent-green);
+    color: var(--bg-primary);
+    font-size: 8px;
+    font-weight: 700;
+    border: 1px solid var(--accent-green);
+    box-shadow: 0 0 2px var(--accent-green);
+}
+
+.version-badge-small.older {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
+    box-shadow: 0 0 2px var(--text-muted);
+}
+
+/* Mobile responsiveness for comparison */
+@media (max-width: 768px) {
+    .diff-content {
+        flex-direction: column;
+    }
+
+    .diff-content::before {
+        display: none; /* Hide center divider on mobile */
+    }
+
+    .diff-side {
+        border-bottom: 1px solid var(--border-primary);
+    }
+
+    .diff-side:last-child {
+        border-bottom: none;
+    }
 }
 
 .diff-stats {

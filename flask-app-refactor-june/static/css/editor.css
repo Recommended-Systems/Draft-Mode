@@ -195,9 +195,17 @@
     background: var(--bg-primary);
     border: 1px solid var(--border-primary);
     overflow-y: auto;
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 16px; /* Slightly larger for better readability */
+    line-height: 1.7; /* Better line spacing for reading */
     color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; /* Modern sans-serif stack */
+}
+
+/* Ensure code blocks still use monospace within the preview */
+.preview-content code,
+.preview-content pre,
+.preview-content pre code {
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
 /* Preview Content Styling */
@@ -360,55 +368,67 @@
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .editor-toolbar {
-        grid-template-columns: 1fr;
-        gap: 16px;
-        min-width: auto;
-        overflow-x: visible;
+        grid-template-columns: 1fr; /* Single column on mobile */
+        gap: 12px; /* Reduced gap */
+        padding: 12px; /* Reduced padding */
     }
 
     .toolbar-column {
-        min-height: auto;
+        min-height: auto; /* Remove fixed height on mobile */
     }
 
-    /* Make mobile columns collapsible */
+    /* Collapsible mobile columns - collapsed by default */
     .column-header {
         cursor: pointer;
         position: relative;
-        padding-right: 20px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-primary);
+        margin-bottom: 0; /* Remove margin when collapsed */
     }
 
     .column-header::after {
-        content: '▼';
+        content: '▶'; /* Right arrow for collapsed state */
         position: absolute;
         right: 0;
         font-size: 10px;
         transition: transform 0.2s ease;
+        color: var(--accent-green);
     }
 
-    .column-header.collapsed::after {
-        transform: rotate(-90deg);
+    .column-header.expanded::after {
+        transform: rotate(90deg); /* Down arrow for expanded state */
     }
 
     .column-content {
         overflow: hidden;
-        transition: max-height 0.3s ease, opacity 0.3s ease;
-        max-height: 500px;
-        opacity: 1;
-    }
-
-    .column-content.collapsed {
-        max-height: 0;
+        transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+        max-height: 0; /* Collapsed by default */
         opacity: 0;
         margin-top: 0;
     }
 
+    .column-content.expanded {
+        max-height: 300px; /* Reasonable max height */
+        opacity: 1;
+        margin-top: 8px;
+    }
+
+    /* Reduce button sizes on mobile */
+    .column-btn, .version-selector {
+        font-size: 10px;
+        padding: 6px 10px;
+    }
+
+    /* IMPORTANT: Fix editor layout to be ROWS on mobile, not columns */
     .editor-container {
-        flex-direction: column;
-        height: auto;
+        flex-direction: column !important; /* Force column layout on mobile */
+        height: auto !important; /* Allow natural height */
+        gap: 2px;
     }
 
     .editor-panel {
-        min-height: 300px;
+        min-height: 300px; /* Minimum height for each panel */
+        width: 100%; /* Full width */
     }
 
     .preview-content {
@@ -424,14 +444,31 @@
     .action-buttons {
         justify-content: center;
     }
-}editor-toolbar {
+}
+
+/* Fix for tablet sizes - ensure 3 columns are maintained */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .editor-toolbar {
+        grid-template-columns: 1fr 1fr 1fr; /* 3 equal columns on desktop */
+        gap: 24px;
+        padding: 16px;
+    }
+    
+    .column-btn, .version-selector {
+        font-size: 10px;
+        padding: 6px 10px;
+    }
+}
+
+.editor-toolbar {
     background: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-primary);
     padding: 16px;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr; /* Force 3 equal columns */
     gap: 24px;
     align-items: start;
+    min-width: 0; /* Allow grid items to shrink */
 }
 
 .toolbar-column {
@@ -439,6 +476,7 @@
     flex-direction: column;
     gap: 12px;
     min-height: 140px;
+    min-width: 0; /* Allow flex items to shrink */
 }
 
 .column-header {

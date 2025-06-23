@@ -18,31 +18,27 @@
 
 {% block content %}
 <div style="padding: 16px 24px; background: var(--bg-tertiary); border-bottom: 2px solid var(--border-primary); display: flex; justify-content: space-between; align-items: center;">
-    <h2 style="font-size: 14px;">Comparing {{ version1.version_name }} vs {{ version2.version_name }}</h2>
+    <!-- Determine which version is newer based on created_at or updated_at -->
+    {% if version1.created_at > version2.created_at %}
+        {% set older_version = version2 %}
+        {% set newer_version = version1 %}
+    {% else %}
+        {% set older_version = version1 %}
+        {% set newer_version = version2 %}
+    {% endif %}
+    
+    <h2 style="font-size: 14px;">Comparing {{ older_version.version_name }} → {{ newer_version.version_name }}</h2>
     <a href="{{ url_for('drafts.edit_draft', draft_id=draft.id) }}" class="btn">← Back to Editor</a>
 </div>
 
-<div class="compare-container">
-    <div class="compare-panel">
-        <div class="panel-header">
-            <span>{{ version1.version_name }}</span>
-            <span class="version-badge original">Original</span>
-        </div>
-        <div class="compare-content" id="content1">{{ version1.content }}</div>
-    </div>
-    
-    <div class="compare-panel">
-        <div class="panel-header">
-            <span>{{ version2.version_name }}</span>
-            <span class="version-badge">Updated</span>
-        </div>
-        <div class="compare-content" id="content2">{{ version2.content }}</div>
-    </div>
+<!-- Hide the original compare container -->
+<div class="compare-container" style="display: none;">
+    <!-- Original content hidden -->
 </div>
 
 <div class="diff-container" id="diffContainer">
     <div class="diff-header">
-        <span>📊 Comparison Results</span>
+        <span>📊 Comparison Results: {{ older_version.version_name }} → {{ newer_version.version_name }}</span>
         <div class="diff-stats" id="diffStats">
             <div class="stat-item">
                 <div class="stat-dot added"></div>
@@ -58,10 +54,29 @@
             </div>
         </div>
     </div>
+    
+    <!-- Add side headers -->
+    <div style="display: flex;">
+        <div class="diff-side-header older" style="flex: 1;">
+            <span class="version-label">{{ older_version.version_name }}</span>
+            <span class="version-badge-small older">Original</span>
+        </div>
+        <div class="diff-side-header" style="flex: 1;">
+            <span class="version-label">{{ newer_version.version_name }}</span>
+            <span class="version-badge-small">Updated</span>
+        </div>
+    </div>
+    
     <div class="diff-content">
         <div class="diff-side diff-left" id="diffLeft"></div>
         <div class="diff-side diff-right" id="diffRight"></div>
     </div>
+</div>
+
+<!-- Hidden content for JavaScript processing -->
+<div style="display: none;">
+    <div id="olderContent">{{ older_version.content }}</div>
+    <div id="newerContent">{{ newer_version.content }}</div>
 </div>
 {% endblock %}
 
@@ -438,11 +453,13 @@
     
     // Initialize comparison
     document.addEventListener('DOMContentLoaded', function() {
-        const content1 = document.getElementById('content1').textContent;
-        const content2 = document.getElementById('content2').textContent;
+        // Get content from hidden divs (older version on left, newer on right)
+        const olderContent = document.getElementById('olderContent').textContent;
+        const newerContent = document.getElementById('newerContent').textContent;
         
-        // Compute and render diff
-        const diff = computeDiff(content1, content2);
+        // Compute and render diff with correct ordering
+        // older content = left side, newer content = right side
+        const diff = computeDiff(olderContent, newerContent);
         renderDiff(diff);
     });
 </script>

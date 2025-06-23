@@ -580,32 +580,68 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     
     // Mobile collapsible columns
     function initMobileCollapse() {
+        // Only apply on mobile screens
         if (window.innerWidth <= 768) {
             document.querySelectorAll('.column-header').forEach(header => {
-                header.addEventListener('click', function() {
-                    const content = this.nextElementSibling;
-                    const isCollapsed = content.classList.contains('collapsed');
-                    
-                    if (isCollapsed) {
-                        content.classList.remove('collapsed');
-                        this.classList.remove('collapsed');
-                    } else {
-                        content.classList.add('collapsed');
-                        this.classList.add('collapsed');
-                    }
-                });
+                const content = header.nextElementSibling;
+                
+                // Start collapsed by default on mobile
+                if (!header.classList.contains('expanded')) {
+                    content.classList.remove('expanded');
+                    header.classList.remove('expanded');
+                }
+                
+                // Remove existing event listeners
+                header.removeEventListener('click', handleColumnToggle);
+                
+                // Add click event listener
+                header.addEventListener('click', handleColumnToggle);
             });
+        } else {
+            // On desktop, ensure all columns are expanded and remove mobile classes
+            document.querySelectorAll('.column-header').forEach(header => {
+                const content = header.nextElementSibling;
+                header.classList.remove('expanded');
+                content.classList.remove('expanded');
+                content.style.maxHeight = '';
+                content.style.opacity = '';
+                content.style.marginTop = '';
+                
+                // Remove click event listeners on desktop
+                header.removeEventListener('click', handleColumnToggle);
+                header.style.cursor = '';
+            });
+        }
+    }
+    function handleColumnToggle(event) {
+        const header = event.currentTarget;
+        const content = header.nextElementSibling;
+        const isExpanded = header.classList.contains('expanded');
+        
+        if (isExpanded) {
+            // Collapse
+            content.classList.remove('expanded');
+            header.classList.remove('expanded');
+        } else {
+            // Expand
+            content.classList.add('expanded');
+            header.classList.add('expanded');
         }
     }
     
     // Initialize mobile collapse on load and resize
-    initMobileCollapse();
-    window.addEventListener('resize', function() {
-        // Remove event listeners and re-initialize on resize
-        document.querySelectorAll('.column-header').forEach(header => {
-            header.replaceWith(header.cloneNode(true));
-        });
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
         initMobileCollapse();
+    });
+
+    // Re-initialize on window resize with debouncing
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            initMobileCollapse();
+        }, 250);
     });
 </script>
 {% endblock %}
