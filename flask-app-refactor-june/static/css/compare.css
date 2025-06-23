@@ -1,0 +1,213 @@
+/* Compare page styles with improved GitHub-like diff colors */
+.compare-container {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-primary);
+    height: calc(100vh - 200px);
+}
+
+.compare-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+}
+
+.panel-header {
+    background: var(--bg-tertiary);
+    padding: 10px 16px;
+    border-bottom: 2px solid var(--border-primary);
+    font-weight: 500;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+}
+
+.version-badge {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+    padding: 3px 8px;
+    border: 2px solid var(--border-primary);
+    border-top-color: var(--text-primary);
+    border-left-color: var(--text-primary);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.version-badge.original {
+    background: var(--text-muted);
+}
+
+.compare-content {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 3px inset var(--bg-secondary);
+    border-color: var(--border-primary) var(--text-primary) var(--text-primary) var(--border-primary);
+    box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
+    line-height: 1.4;
+}
+
+.diff-container {
+    margin-top: 20px;
+    background: var(--bg-primary);
+    border: 3px inset var(--bg-secondary);
+    border-color: var(--border-primary) var(--text-primary) var(--text-primary) var(--border-primary);
+    box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
+}
+
+.diff-header {
+    background: var(--bg-tertiary);
+    padding: 8px 16px;
+    border-bottom: 2px solid var(--border-primary);
+    font-size: 10px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.diff-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 9px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-dot {
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--border-primary);
+    border-top-color: var(--text-primary);
+    border-left-color: var(--text-primary);
+}
+
+.stat-dot.added { background: #22863a; }
+.stat-dot.removed { background: #cb2431; }
+.stat-dot.modified { background: #e36209; }
+
+.diff-content {
+    display: flex;
+    min-height: 300px;
+    position: relative;
+    background: var(--bg-primary);
+}
+
+.diff-content::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-primary);
+    z-index: 1;
+}
+
+.diff-side {
+    flex: 1;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
+
+.diff-line {
+    padding: 2px 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    min-height: 16px;
+    display: flex;
+    align-items: flex-start;
+    border-left: 2px solid transparent;
+}
+
+.line-number {
+    min-width: 28px;
+    padding-right: 6px;
+    color: var(--text-muted);
+    font-size: 9px;
+    text-align: right;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.line-content {
+    flex: 1;
+}
+
+/* GitHub-inspired diff colors with better contrast */
+.diff-removed {
+    background: #2d1117;
+    border-left-color: #f85149;
+    color: #f0f6fc;
+}
+
+.diff-added {
+    background: #0d1117;
+    border-left-color: #3fb950;
+    color: #f0f6fc;
+}
+
+.diff-modified {
+    background: #1c1810;
+    border-left-color: #d29922;
+    color: #f0f6fc;
+}
+
+.diff-unchanged {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Inline word/character highlighting with muted colors */
+.word-added, .char-added {
+    background: rgba(63, 185, 80, 0.3);
+    color: #aff5b4;
+    padding: 1px 2px;
+    border-radius: 2px;
+}
+
+.word-removed, .char-removed {
+    background: rgba(248, 81, 73, 0.3);
+    color: #ffdcd7;
+    padding: 1px 2px;
+    border-radius: 2px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .compare-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .diff-content {
+        flex-direction: column;
+    }
+
+    .diff-content::before {
+        display: none;
+    }
+
+    .diff-side {
+        border-bottom: 1px solid var(--border-primary);
+    }
+}

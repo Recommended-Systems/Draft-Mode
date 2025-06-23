@@ -2,221 +2,22 @@
 
 {% block window_title %}Compare Versions - {{ draft.title }}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/compare.css') }}">
+{% endblock %}
+
 {% block breadcrumb %}
 <div style="font-size: 10px; color: var(--text-medium); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px;">
     <a href="{{ url_for('main.dashboard') }}" style="color: inherit; text-decoration: none;">My Posts</a>
-    <span style="color: var(--mac-dark-gray); font-size: 8px;">▶</span>
+    <span style="color: var(--text-muted); font-size: 8px;">▶</span>
     <a href="{{ url_for('drafts.edit_draft', draft_id=draft.id) }}" style="color: inherit; text-decoration: none;">{{ draft.title }}</a>
-    <span style="color: var(--mac-dark-gray); font-size: 8px;">▶</span>
+    <span style="color: var(--text-muted); font-size: 8px;">▶</span>
     Compare Versions
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    .compare-container {
-        display: flex;
-        gap: 2px;
-        background: var(--mac-shadow);
-        height: calc(100vh - 200px);
-    }
-
-    .compare-panel {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: var(--mac-gray);
-    }
-
-    .panel-header {
-        background: var(--mac-gray);
-        background-image: var(--dither-pattern);
-        padding: 10px 16px;
-        border-bottom: 2px solid var(--mac-shadow);
-        font-weight: 500;
-        font-size: 11px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--text-dark);
-    }
-
-    .version-badge {
-        background: var(--accent-sage);
-        color: var(--mac-cream);
-        padding: 3px 8px;
-        border: 2px solid var(--mac-shadow);
-        border-top-color: var(--mac-cream);
-        border-left-color: var(--mac-cream);
-        font-size: 9px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .version-badge.original {
-        background: var(--mac-dark-gray);
-    }
-
-    .compare-content {
-        flex: 1;
-        padding: 12px;
-        background: var(--mac-cream);
-        border: 3px inset var(--mac-gray);
-        border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
-        box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
-        overflow-y: auto;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
-        white-space: pre-wrap;
-        line-height: 1.4;
-    }
-
-    .diff-container {
-        margin-top: 20px;
-        background: var(--mac-cream);
-        border: 3px inset var(--mac-gray);
-        border-color: var(--mac-shadow) var(--mac-cream) var(--mac-cream) var(--mac-shadow);
-        box-shadow: inset 2px 2px 4px rgba(26, 24, 16, 0.2);
-    }
-
-    .diff-header {
-        background: var(--mac-gray);
-        background-image: var(--dither-pattern);
-        padding: 8px 16px;
-        border-bottom: 2px solid var(--mac-shadow);
-        font-size: 10px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .diff-stats {
-        display: flex;
-        gap: 12px;
-        font-size: 9px;
-    }
-
-    .stat-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .stat-dot {
-        width: 6px;
-        height: 6px;
-        border: 1px solid var(--mac-shadow);
-        border-top-color: var(--mac-cream);
-        border-left-color: var(--mac-cream);
-    }
-
-    .stat-dot.added { background: var(--accent-sage); }
-    .stat-dot.removed { background: var(--accent-rust); }
-    .stat-dot.modified { background: var(--accent-amber); }
-
-    .diff-content {
-        display: flex;
-        min-height: 300px;
-        position: relative;
-        background: var(--mac-cream);
-    }
-    
-    .diff-content::before {
-        content: '';
-        position: absolute;
-        left: 50%;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: var(--mac-shadow);
-        z-index: 1;
-    }
-    
-    .diff-side {
-        flex: 1;
-        overflow-x: auto;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
-    }
-    
-    .diff-line {
-        padding: 2px 12px;
-        line-height: 1.4;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        min-height: 16px;
-        display: flex;
-        align-items: flex-start;
-        border-left: 2px solid transparent;
-    }
-    
-    .line-number {
-        min-width: 28px;
-        padding-right: 6px;
-        color: var(--text-medium);
-        font-size: 9px;
-        text-align: right;
-        user-select: none;
-        flex-shrink: 0;
-    }
-    
-    .line-content {
-        flex: 1;
-    }
-
-    .diff-removed {
-        background: #f4ebe8;
-        border-left-color: var(--accent-rust);
-        color: var(--text-dark);
-    }
-
-    .diff-added {
-        background: #eff2eb;
-        border-left-color: var(--accent-sage);
-        color: var(--text-dark);
-    }
-
-    .diff-modified {
-        background: #f0ebe4;
-        border-left-color: var(--accent-amber);
-        color: var(--text-dark);
-    }
-
-    .diff-unchanged {
-        background: var(--mac-cream);
-        color: var(--text-dark);
-    }
-
-    .word-added, .char-added {
-        background: var(--accent-sage);
-        color: var(--mac-cream);
-        padding: 1px 3px;
-        font-weight: 500;
-        border: 1px solid var(--mac-shadow);
-        border-top-color: var(--mac-cream);
-        border-left-color: var(--mac-cream);
-    }
-
-    .word-removed, .char-removed {
-        background: var(--accent-rust);
-        color: var(--mac-cream);
-        padding: 1px 3px;
-        font-weight: 500;
-        border: 1px solid var(--mac-shadow);
-        border-top-color: var(--mac-cream);
-        border-left-color: var(--mac-cream);
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div style="padding: 16px 24px; background: var(--mac-gray); background-image: var(--dither-pattern); border-bottom: 2px solid var(--mac-shadow); display: flex; justify-content: space-between; align-items: center;">
+<div style="padding: 16px 24px; background: var(--bg-tertiary); border-bottom: 2px solid var(--border-primary); display: flex; justify-content: space-between; align-items: center;">
     <h2 style="font-size: 14px;">Comparing {{ version1.version_name }} vs {{ version2.version_name }}</h2>
     <a href="{{ url_for('drafts.edit_draft', draft_id=draft.id) }}" class="btn">← Back to Editor</a>
 </div>
@@ -266,466 +67,383 @@
 
 {% block extra_js %}
 <script>
-    // Include the same diff computation functions from the original HTML file
-    // [All the diff computation functions would go here - computeWordDiffSeparate, computeCharDiffSeparate, etc.]
+    // Diff computation functions with improved highlighting
+    function computeWordDiffSeparate(line1, line2) {
+        if (!line1 && !line2) return { left: '', right: '' };
+        if (!line1) return { left: '', right: `<span class="word-added">${line2}</span>` };
+        if (!line2) return { left: `<span class="word-removed">${line1}</span>`, right: '' };
+        
+        const words1 = line1.split(/(\s+)/);
+        const words2 = line2.split(/(\s+)/);
+        
+        if (line1 === line2) return { left: line1, right: line2 };
+        
+        if (words1.length < 3 || words2.length < 3 || 
+            Math.abs(words1.length - words2.length) > Math.max(words1.length, words2.length) * 0.5) {
+            return computeCharDiffSeparate(line1, line2);
+        }
+        
+        const dp = [];
+        for (let i = 0; i <= words1.length; i++) {
+            dp[i] = [];
+            for (let j = 0; j <= words2.length; j++) {
+                if (i === 0) dp[i][j] = j;
+                else if (j === 0) dp[i][j] = i;
+                else if (words1[i-1] === words2[j-1]) dp[i][j] = dp[i-1][j-1];
+                else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+            }
+        }
+        
+        let leftResult = '';
+        let rightResult = '';
+        let i = words1.length, j = words2.length;
+        
+        while (i > 0 || j > 0) {
+            if (i > 0 && j > 0 && words1[i-1] === words2[j-1]) {
+                leftResult = words1[i-1] + leftResult;
+                rightResult = words2[j-1] + rightResult;
+                i--; j--;
+            } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                rightResult = `<span class="word-added">${words2[j-1]}</span>` + rightResult;
+                j--;
+            } else if (i > 0) {
+                leftResult = `<span class="word-removed">${words1[i-1]}</span>` + leftResult;
+                i--;
+            }
+        }
+        
+        return { left: leftResult, right: rightResult };
+    }
+    
+    function computeCharDiffSeparate(line1, line2) {
+        const dp = [];
+        const len1 = line1.length;
+        const len2 = line2.length;
+        
+        for (let i = 0; i <= len1; i++) {
+            dp[i] = [];
+            for (let j = 0; j <= len2; j++) {
+                if (i === 0) dp[i][j] = j;
+                else if (j === 0) dp[i][j] = i;
+                else if (line1[i-1] === line2[j-1]) dp[i][j] = dp[i-1][j-1];
+                else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+            }
+        }
+        
+        const leftParts = [];
+        const rightParts = [];
+        let i = len1, j = len2;
+        
+        while (i > 0 || j > 0) {
+            if (i > 0 && j > 0 && line1[i-1] === line2[j-1]) {
+                leftParts.unshift({type: 'unchanged', char: line1[i-1]});
+                rightParts.unshift({type: 'unchanged', char: line2[j-1]});
+                i--; j--;
+            } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                rightParts.unshift({type: 'added', char: line2[j-1]});
+                j--;
+            } else if (i > 0) {
+                leftParts.unshift({type: 'removed', char: line1[i-1]});
+                i--;
+            }
+        }
+        
+        const combineChanges = (parts) => {
+            let result = '';
+            let currentBlock = null;
+            
+            for (const part of parts) {
+                if (currentBlock && currentBlock.type === part.type) {
+                    currentBlock.text += part.char;
+                } else {
+                    if (currentBlock) {
+                        if (currentBlock.type === 'unchanged') {
+                            result += currentBlock.text;
+                        } else {
+                            const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
+                            result += `<span class="${spanClass}">${currentBlock.text}</span>`;
+                        }
+                    }
+                    currentBlock = {type: part.type, text: part.char};
+                }
+            }
+            
+            if (currentBlock) {
+                if (currentBlock.type === 'unchanged') {
+                    result += currentBlock.text;
+                } else {
+                    const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
+                    result += `<span class="${spanClass}">${currentBlock.text}</span>`;
+                }
+            }
+            
+            return result;
+        };
+        
+        return { 
+            left: combineChanges(leftParts), 
+            right: combineChanges(rightParts) 
+        };
+    }
+    
+    function calculateSimilarity(line1, line2) {
+        if (!line1 || !line2) return 0;
+        
+        let norm1 = line1.trim().replace(/\s+/g, ' ');
+        let norm2 = line2.trim().replace(/\s+/g, ' ');
+        
+        const listMarkers1 = norm1.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
+        const listMarkers2 = norm2.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
+        
+        if (listMarkers1 && listMarkers2) {
+            norm1 = norm1.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
+            norm2 = norm2.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
+        }
+        
+        if (norm1 === norm2) return 1;
+        
+        const len1 = norm1.length;
+        const len2 = norm2.length;
+        const dp = [];
+        
+        for (let i = 0; i <= len1; i++) {
+            dp[i] = [i];
+            for (let j = 1; j <= len2; j++) {
+                dp[i][j] = 0;
+            }
+        }
+        for (let j = 0; j <= len2; j++) {
+            dp[0][j] = j;
+        }
+        
+        for (let i = 1; i <= len1; i++) {
+            for (let j = 1; j <= len2; j++) {
+                const cost = norm1[i-1] === norm2[j-1] ? 0 : 1;
+                dp[i][j] = Math.min(
+                    dp[i-1][j] + 1,
+                    dp[i][j-1] + 1,
+                    dp[i-1][j-1] + cost
+                );
+            }
+        }
+        
+        const maxLen = Math.max(len1, len2);
+        return maxLen === 0 ? 1 : (maxLen - dp[len1][len2]) / maxLen;
+    }
+    
+    function reconstructLines(text1, text2) {
+        const lines1 = text1.split('\n');
+        const lines2 = text2.split('\n');
+        
+        const reconstructed1 = [];
+        const reconstructed2 = [];
+        
+        let i = 0, j = 0;
+        while (i < lines1.length || j < lines2.length) {
+            if (i >= lines1.length) {
+                reconstructed1.push('');
+                reconstructed2.push(lines2[j]);
+                j++;
+            } else if (j >= lines2.length) {
+                reconstructed1.push(lines1[i]);
+                reconstructed2.push('');
+                i++;
+            } else {
+                const similarity = calculateSimilarity(lines1[i], lines2[j]);
+                
+                if (similarity > 0.3) {
+                    reconstructed1.push(lines1[i]);
+                    reconstructed2.push(lines2[j]);
+                    i++;
+                    j++;
+                } else {
+                    if (j + 1 < lines2.length && calculateSimilarity(lines1[i], lines2[j + 1]) > 0.7) {
+                        reconstructed1.push('');
+                        reconstructed2.push(lines2[j]);
+                        j++;
+                    }
+                    else if (i + 1 < lines1.length && calculateSimilarity(lines1[i + 1], lines2[j]) > 0.7) {
+                        reconstructed1.push(lines1[i]);
+                        reconstructed2.push('');
+                        i++;
+                    }
+                    else if (i + 1 < lines1.length) {
+                        const merged = lines1[i] + ' ' + lines1[i + 1];
+                        if (calculateSimilarity(merged, lines2[j]) > 0.7) {
+                            reconstructed1.push(merged);
+                            reconstructed2.push(lines2[j]);
+                            i += 2;
+                            j++;
+                            continue;
+                        }
+                    }
+                    else if (j + 1 < lines2.length) {
+                        const merged = lines2[j] + ' ' + lines2[j + 1];
+                        if (calculateSimilarity(lines1[i], merged) > 0.7) {
+                            reconstructed1.push(lines1[i]);
+                            reconstructed2.push(merged);
+                            i++;
+                            j += 2;
+                            continue;
+                        }
+                    }
+                    
+                    reconstructed1.push(lines1[i]);
+                    reconstructed2.push(lines2[j]);
+                    i++;
+                    j++;
+                }
+            }
+        }
+        
+        return [reconstructed1, reconstructed2];
+    }
+    
+    function computeDiff(text1, text2) {
+        const [lines1, lines2] = reconstructLines(text1, text2);
+        
+        const dp = [];
+        for (let i = 0; i <= lines1.length; i++) {
+            dp[i] = [];
+            for (let j = 0; j <= lines2.length; j++) {
+                if (i === 0) dp[i][j] = j;
+                else if (j === 0) dp[i][j] = i;
+                else if (lines1[i-1] === lines2[j-1]) dp[i][j] = dp[i-1][j-1];
+                else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+            }
+        }
+        
+        const diff = [];
+        let i = lines1.length, j = lines2.length;
+        
+        while (i > 0 || j > 0) {
+            if (i > 0 && j > 0 && lines1[i-1] === lines2[j-1]) {
+                diff.unshift({type: 'unchanged', line1: lines1[i-1], line2: lines2[j-1]});
+                i--; j--;
+            } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
+                diff.unshift({type: 'added', line1: '', line2: lines2[j-1]});
+                j--;
+            } else if (i > 0) {
+                diff.unshift({type: 'removed', line1: lines1[i-1], line2: ''});
+                i--;
+            }
+        }
+        
+        const processedDiff = [];
+        for (let k = 0; k < diff.length; k++) {
+            if (diff[k].type === 'removed' && k + 1 < diff.length && diff[k + 1].type === 'added') {
+                const similarity = calculateSimilarity(diff[k].line1, diff[k + 1].line2);
+                
+                if (similarity > 0.3) {
+                    const line1 = diff[k].line1;
+                    const line2 = diff[k + 1].line2;
+                    const wordDiff = computeWordDiffSeparate(line1, line2);
+                    
+                    processedDiff.push({
+                        type: 'modified',
+                        line1: line1,
+                        line2: line2,
+                        leftDiff: wordDiff.left,
+                        rightDiff: wordDiff.right
+                    });
+                    k++;
+                } else {
+                    processedDiff.push(diff[k]);
+                }
+            } else {
+                processedDiff.push(diff[k]);
+            }
+        }
+        
+        return processedDiff;
+    }
+    
+    function renderDiff(diff) {
+        const leftDiv = document.getElementById('diffLeft');
+        const rightDiv = document.getElementById('diffRight');
+        
+        leftDiv.innerHTML = '';
+        rightDiv.innerHTML = '';
+        
+        let addedCount = 0;
+        let removedCount = 0;
+        let modifiedCount = 0;
+        let leftLineNum = 1;
+        let rightLineNum = 1;
+        
+        diff.forEach(item => {
+            const leftLine = document.createElement('div');
+            const rightLine = document.createElement('div');
+            
+            leftLine.className = 'diff-line';
+            rightLine.className = 'diff-line';
+            
+            const leftNumSpan = document.createElement('span');
+            const rightNumSpan = document.createElement('span');
+            const leftContentSpan = document.createElement('span');
+            const rightContentSpan = document.createElement('span');
+            
+            leftNumSpan.className = 'line-number';
+            rightNumSpan.className = 'line-number';
+            leftContentSpan.className = 'line-content';
+            rightContentSpan.className = 'line-content';
+            
+            leftLine.appendChild(leftNumSpan);
+            leftLine.appendChild(leftContentSpan);
+            rightLine.appendChild(rightNumSpan);
+            rightLine.appendChild(rightContentSpan);
+            
+            if (item.type === 'unchanged') {
+                leftLine.className += ' diff-unchanged';
+                rightLine.className += ' diff-unchanged';
+                leftNumSpan.textContent = leftLineNum++;
+                rightNumSpan.textContent = rightLineNum++;
+                leftContentSpan.textContent = item.line1;
+                rightContentSpan.textContent = item.line2;
+            } else if (item.type === 'removed') {
+                leftLine.className += ' diff-removed';
+                rightLine.className += ' diff-unchanged';
+                leftNumSpan.textContent = leftLineNum++;
+                rightNumSpan.innerHTML = '&nbsp;';
+                leftContentSpan.textContent = item.line1;
+                rightContentSpan.innerHTML = '&nbsp;';
+                removedCount++;
+            } else if (item.type === 'added') {
+                leftLine.className += ' diff-unchanged';
+                rightLine.className += ' diff-added';
+                leftNumSpan.innerHTML = '&nbsp;';
+                rightNumSpan.textContent = rightLineNum++;
+                leftContentSpan.innerHTML = '&nbsp;';
+                rightContentSpan.textContent = item.line2;
+                addedCount++;
+            } else if (item.type === 'modified') {
+                leftLine.className += ' diff-modified';
+                rightLine.className += ' diff-modified';
+                leftNumSpan.textContent = leftLineNum++;
+                rightNumSpan.textContent = rightLineNum++;
+                leftContentSpan.innerHTML = item.leftDiff;
+                rightContentSpan.innerHTML = item.rightDiff;
+                modifiedCount++;
+            }
+            
+            leftDiv.appendChild(leftLine);
+            rightDiv.appendChild(rightLine);
+        });
+        
+        // Update stats
+        document.getElementById('addedCount').textContent = `${addedCount} addition${addedCount !== 1 ? 's' : ''}`;
+        document.getElementById('removedCount').textContent = `${removedCount} deletion${removedCount !== 1 ? 's' : ''}`;
+        document.getElementById('modifiedCount').textContent = `${modifiedCount} modification${modifiedCount !== 1 ? 's' : ''}`;
+    }
     
     // Initialize comparison
     document.addEventListener('DOMContentLoaded', function() {
         const content1 = document.getElementById('content1').textContent;
         const content2 = document.getElementById('content2').textContent;
         
-        // Compute and render diff using the same functions from the original interface
+        // Compute and render diff
         const diff = computeDiff(content1, content2);
         renderDiff(diff);
     });
-    
-    // All the diff computation functions from the original code
-        function computeWordDiffSeparate(line1, line2) {
-            if (!line1 && !line2) return { left: '', right: '' };
-            if (!line1) return { left: '', right: `<span class="word-added">${line2}</span>` };
-            if (!line2) return { left: `<span class="word-removed">${line1}</span>`, right: '' };
-            
-            const words1 = line1.split(/(\s+)/);
-            const words2 = line2.split(/(\s+)/);
-            
-            if (line1 === line2) return { left: line1, right: line2 };
-            
-            if (words1.length < 3 || words2.length < 3 || 
-                Math.abs(words1.length - words2.length) > Math.max(words1.length, words2.length) * 0.5) {
-                return computeCharDiffSeparate(line1, line2);
-            }
-            
-            const dp = [];
-            for (let i = 0; i <= words1.length; i++) {
-                dp[i] = [];
-                for (let j = 0; j <= words2.length; j++) {
-                    if (i === 0) dp[i][j] = j;
-                    else if (j === 0) dp[i][j] = i;
-                    else if (words1[i-1] === words2[j-1]) dp[i][j] = dp[i-1][j-1];
-                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-                }
-            }
-            
-            let leftResult = '';
-            let rightResult = '';
-            let i = words1.length, j = words2.length;
-            
-            while (i > 0 || j > 0) {
-                if (i > 0 && j > 0 && words1[i-1] === words2[j-1]) {
-                    leftResult = words1[i-1] + leftResult;
-                    rightResult = words2[j-1] + rightResult;
-                    i--; j--;
-                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
-                    rightResult = `<span class="word-added">${words2[j-1]}</span>` + rightResult;
-                    j--;
-                } else if (i > 0) {
-                    leftResult = `<span class="word-removed">${words1[i-1]}</span>` + leftResult;
-                    i--;
-                }
-            }
-            
-            return { left: leftResult, right: rightResult };
-        }
-        
-        function computeCharDiffSeparate(line1, line2) {
-            const dp = [];
-            const len1 = line1.length;
-            const len2 = line2.length;
-            
-            for (let i = 0; i <= len1; i++) {
-                dp[i] = [];
-                for (let j = 0; j <= len2; j++) {
-                    if (i === 0) dp[i][j] = j;
-                    else if (j === 0) dp[i][j] = i;
-                    else if (line1[i-1] === line2[j-1]) dp[i][j] = dp[i-1][j-1];
-                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-                }
-            }
-            
-            const leftParts = [];
-            const rightParts = [];
-            let i = len1, j = len2;
-            
-            while (i > 0 || j > 0) {
-                if (i > 0 && j > 0 && line1[i-1] === line2[j-1]) {
-                    leftParts.unshift({type: 'unchanged', char: line1[i-1]});
-                    rightParts.unshift({type: 'unchanged', char: line2[j-1]});
-                    i--; j--;
-                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
-                    rightParts.unshift({type: 'added', char: line2[j-1]});
-                    j--;
-                } else if (i > 0) {
-                    leftParts.unshift({type: 'removed', char: line1[i-1]});
-                    i--;
-                }
-            }
-            
-            const combineChanges = (parts) => {
-                let result = '';
-                let currentBlock = null;
-                
-                for (const part of parts) {
-                    if (currentBlock && currentBlock.type === part.type) {
-                        currentBlock.text += part.char;
-                    } else {
-                        if (currentBlock) {
-                            if (currentBlock.type === 'unchanged') {
-                                result += currentBlock.text;
-                            } else {
-                                const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
-                                result += `<span class="${spanClass}">${currentBlock.text}</span>`;
-                            }
-                        }
-                        currentBlock = {type: part.type, text: part.char};
-                    }
-                }
-                
-                if (currentBlock) {
-                    if (currentBlock.type === 'unchanged') {
-                        result += currentBlock.text;
-                    } else {
-                        const spanClass = currentBlock.type === 'added' ? 'char-added' : 'char-removed';
-                        result += `<span class="${spanClass}">${currentBlock.text}</span>`;
-                    }
-                }
-                
-                return result;
-            };
-            
-            return { 
-                left: combineChanges(leftParts), 
-                right: combineChanges(rightParts) 
-            };
-        }
-        
-        function calculateSimilarity(line1, line2) {
-            if (!line1 || !line2) return 0;
-            
-            let norm1 = line1.trim().replace(/\s+/g, ' ');
-            let norm2 = line2.trim().replace(/\s+/g, ' ');
-            
-            const listMarkers1 = norm1.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
-            const listMarkers2 = norm2.match(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./);
-            
-            if (listMarkers1 && listMarkers2) {
-                norm1 = norm1.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
-                norm2 = norm2.replace(/^[\-\*\+]|\d+\.|\d+\)|\([a-zA-Z0-9]+\)|[a-zA-Z]\./, '').trim();
-            }
-            
-            if (norm1 === norm2) return 1;
-            
-            const len1 = norm1.length;
-            const len2 = norm2.length;
-            const dp = [];
-            
-            for (let i = 0; i <= len1; i++) {
-                dp[i] = [i];
-                for (let j = 1; j <= len2; j++) {
-                    dp[i][j] = 0;
-                }
-            }
-            for (let j = 0; j <= len2; j++) {
-                dp[0][j] = j;
-            }
-            
-            for (let i = 1; i <= len1; i++) {
-                for (let j = 1; j <= len2; j++) {
-                    const cost = norm1[i-1] === norm2[j-1] ? 0 : 1;
-                    dp[i][j] = Math.min(
-                        dp[i-1][j] + 1,
-                        dp[i][j-1] + 1,
-                        dp[i-1][j-1] + cost
-                    );
-                }
-            }
-            
-            const maxLen = Math.max(len1, len2);
-            return maxLen === 0 ? 1 : (maxLen - dp[len1][len2]) / maxLen;
-        }
-        
-        function reconstructLines(text1, text2) {
-            const lines1 = text1.split('\n');
-            const lines2 = text2.split('\n');
-            
-            const reconstructed1 = [];
-            const reconstructed2 = [];
-            
-            let i = 0, j = 0;
-            while (i < lines1.length || j < lines2.length) {
-                if (i >= lines1.length) {
-                    reconstructed1.push('');
-                    reconstructed2.push(lines2[j]);
-                    j++;
-                } else if (j >= lines2.length) {
-                    reconstructed1.push(lines1[i]);
-                    reconstructed2.push('');
-                    i++;
-                } else {
-                    const similarity = calculateSimilarity(lines1[i], lines2[j]);
-                    
-                    if (similarity > 0.3) {
-                        reconstructed1.push(lines1[i]);
-                        reconstructed2.push(lines2[j]);
-                        i++;
-                        j++;
-                    } else {
-                        if (j + 1 < lines2.length && calculateSimilarity(lines1[i], lines2[j + 1]) > 0.7) {
-                            reconstructed1.push('');
-                            reconstructed2.push(lines2[j]);
-                            j++;
-                        }
-                        else if (i + 1 < lines1.length && calculateSimilarity(lines1[i + 1], lines2[j]) > 0.7) {
-                            reconstructed1.push(lines1[i]);
-                            reconstructed2.push('');
-                            i++;
-                        }
-                        else if (i + 1 < lines1.length) {
-                            const merged = lines1[i] + ' ' + lines1[i + 1];
-                            if (calculateSimilarity(merged, lines2[j]) > 0.7) {
-                                reconstructed1.push(merged);
-                                reconstructed2.push(lines2[j]);
-                                i += 2;
-                                j++;
-                                continue;
-                            }
-                        }
-                        else if (j + 1 < lines2.length) {
-                            const merged = lines2[j] + ' ' + lines2[j + 1];
-                            if (calculateSimilarity(lines1[i], merged) > 0.7) {
-                                reconstructed1.push(lines1[i]);
-                                reconstructed2.push(merged);
-                                i++;
-                                j += 2;
-                                continue;
-                            }
-                        }
-                        
-                        reconstructed1.push(lines1[i]);
-                        reconstructed2.push(lines2[j]);
-                        i++;
-                        j++;
-                    }
-                }
-            }
-            
-            return [reconstructed1, reconstructed2];
-        }
-        
-        function computeDiff(text1, text2) {
-            const [lines1, lines2] = reconstructLines(text1, text2);
-            
-            const dp = [];
-            for (let i = 0; i <= lines1.length; i++) {
-                dp[i] = [];
-                for (let j = 0; j <= lines2.length; j++) {
-                    if (i === 0) dp[i][j] = j;
-                    else if (j === 0) dp[i][j] = i;
-                    else if (lines1[i-1] === lines2[j-1]) dp[i][j] = dp[i-1][j-1];
-                    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-                }
-            }
-            
-            const diff = [];
-            let i = lines1.length, j = lines2.length;
-            
-            while (i > 0 || j > 0) {
-                if (i > 0 && j > 0 && lines1[i-1] === lines2[j-1]) {
-                    diff.unshift({type: 'unchanged', line1: lines1[i-1], line2: lines2[j-1]});
-                    i--; j--;
-                } else if (j > 0 && (i === 0 || dp[i][j-1] <= dp[i-1][j])) {
-                    diff.unshift({type: 'added', line1: '', line2: lines2[j-1]});
-                    j--;
-                } else if (i > 0) {
-                    diff.unshift({type: 'removed', line1: lines1[i-1], line2: ''});
-                    i--;
-                }
-            }
-            
-            const processedDiff = [];
-            for (let k = 0; k < diff.length; k++) {
-                if (diff[k].type === 'removed' && k + 1 < diff.length && diff[k + 1].type === 'added') {
-                    const similarity = calculateSimilarity(diff[k].line1, diff[k + 1].line2);
-                    
-                    if (similarity > 0.3) {
-                        const line1 = diff[k].line1;
-                        const line2 = diff[k + 1].line2;
-                        const wordDiff = computeWordDiffSeparate(line1, line2);
-                        
-                        processedDiff.push({
-                            type: 'modified',
-                            line1: line1,
-                            line2: line2,
-                            leftDiff: wordDiff.left,
-                            rightDiff: wordDiff.right
-                        });
-                        k++;
-                    } else {
-                        processedDiff.push(diff[k]);
-                    }
-                } else {
-                    processedDiff.push(diff[k]);
-                }
-            }
-            
-            return processedDiff;
-        }
-        
-        function renderDiff(diff) {
-            const leftDiv = document.getElementById('diffLeft');
-            const rightDiv = document.getElementById('diffRight');
-            
-            leftDiv.innerHTML = '';
-            rightDiv.innerHTML = '';
-            
-            let addedCount = 0;
-            let removedCount = 0;
-            let modifiedCount = 0;
-            let leftLineNum = 1;
-            let rightLineNum = 1;
-            
-            diff.forEach(item => {
-                const leftLine = document.createElement('div');
-                const rightLine = document.createElement('div');
-                
-                leftLine.className = 'diff-line';
-                rightLine.className = 'diff-line';
-                
-                const leftNumSpan = document.createElement('span');
-                const rightNumSpan = document.createElement('span');
-                const leftContentSpan = document.createElement('span');
-                const rightContentSpan = document.createElement('span');
-                
-                leftNumSpan.className = 'line-number';
-                rightNumSpan.className = 'line-number';
-                leftContentSpan.className = 'line-content';
-                rightContentSpan.className = 'line-content';
-                
-                leftLine.appendChild(leftNumSpan);
-                leftLine.appendChild(leftContentSpan);
-                rightLine.appendChild(rightNumSpan);
-                rightLine.appendChild(rightContentSpan);
-                
-                if (item.type === 'unchanged') {
-                    leftLine.className += ' diff-unchanged';
-                    rightLine.className += ' diff-unchanged';
-                    leftNumSpan.textContent = leftLineNum++;
-                    rightNumSpan.textContent = rightLineNum++;
-                    leftContentSpan.textContent = item.line1;
-                    rightContentSpan.textContent = item.line2;
-                } else if (item.type === 'removed') {
-                    leftLine.className += ' diff-removed';
-                    rightLine.className += ' diff-unchanged';
-                    leftNumSpan.textContent = leftLineNum++;
-                    rightNumSpan.innerHTML = '&nbsp;';
-                    leftContentSpan.textContent = item.line1;
-                    rightContentSpan.innerHTML = '&nbsp;';
-                    removedCount++;
-                } else if (item.type === 'added') {
-                    leftLine.className += ' diff-unchanged';
-                    rightLine.className += ' diff-added';
-                    leftNumSpan.innerHTML = '&nbsp;';
-                    rightNumSpan.textContent = rightLineNum++;
-                    leftContentSpan.innerHTML = '&nbsp;';
-                    rightContentSpan.textContent = item.line2;
-                    addedCount++;
-                } else if (item.type === 'modified') {
-                    leftLine.className += ' diff-modified';
-                    rightLine.className += ' diff-modified';
-                    leftNumSpan.textContent = leftLineNum++;
-                    rightNumSpan.textContent = rightLineNum++;
-                    leftContentSpan.innerHTML = item.leftDiff;
-                    rightContentSpan.innerHTML = item.rightDiff;
-                    modifiedCount++;
-                }
-                
-                leftDiv.appendChild(leftLine);
-                rightDiv.appendChild(rightLine);
-            });
-            
-            // Update stats
-            document.getElementById('addedCount').textContent = `${addedCount} addition${addedCount !== 1 ? 's' : ''}`;
-            document.getElementById('removedCount').textContent = `${removedCount} deletion${removedCount !== 1 ? 's' : ''}`;
-            document.getElementById('modifiedCount').textContent = `${modifiedCount} modification${modifiedCount !== 1 ? 's' : ''}`;
-        }
-        
-        function updateDiff() {
-            const draft1 = document.getElementById('draft1').value.trim();
-            const draft2 = document.getElementById('draft2').value.trim();
-            const diffContainer = document.getElementById('diffContainer');
-            
-            if (!draft1 && !draft2) {
-                diffContainer.style.display = 'none';
-                return;
-            }
-            
-            diffContainer.style.display = 'block';
-            
-            if (!draft1 || !draft2) {
-                const leftDiv = document.getElementById('diffLeft');
-                const rightDiv = document.getElementById('diffRight');
-                
-                if (!draft1) {
-                    leftDiv.innerHTML = '<div class="placeholder-text">📝 Waiting for your original draft...</div>';
-                } else {
-                    leftDiv.innerHTML = draft1.split('\n').map((line, i) => 
-                        `<div class="diff-line diff-removed">
-                            <span class="line-number">${i + 1}</span>
-                            <span class="line-content">${line || ' '}</span>
-                        </div>`
-                    ).join('');
-                }
-                
-                if (!draft2) {
-                    rightDiv.innerHTML = '<div class="placeholder-text">✨ Paste your updated version to see the magic!</div>';
-                } else {
-                    rightDiv.innerHTML = draft2.split('\n').map((line, i) => 
-                        `<div class="diff-line diff-added">
-                            <span class="line-number">${i + 1}</span>
-                            <span class="line-content">${line || ' '}</span>
-                        </div>`
-                    ).join('');
-                }
-                return;
-            }
-            
-            // Show loading state briefly
-            document.getElementById('diffLeft').innerHTML = '<div class="placeholder-text">🔍 Analyzing differences...</div>';
-            document.getElementById('diffRight').innerHTML = '<div class="placeholder-text">⚡ Computing changes...</div>';
-            
-            setTimeout(() => {
-                const diff = computeDiff(draft1, draft2);
-                renderDiff(diff);
-            }, 300);
-        }
-        
-        // Event listeners
-        document.getElementById('draft1').addEventListener('blur', updateDiff);
-        document.getElementById('draft2').addEventListener('blur', updateDiff);
-        
-        let timeoutId;
-        function debouncedUpdate() {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(updateDiff, 1000);
-        }
-        
-        document.getElementById('draft1').addEventListener('input', debouncedUpdate);
-        document.getElementById('draft2').addEventListener('input', debouncedUpdate);
-        
-        // Fun traffic light interactions
-        document.querySelector('.traffic-light.close').addEventListener('click', () => {
-            alert('Nice try! 😄 But this is just a demo.');
-        });
-        
-        document.querySelector('.traffic-light.minimize').addEventListener('click', () => {
-            const content = document.querySelector('.content');
-            content.style.transform = content.style.transform === 'scale(0.1)' ? 'scale(1)' : 'scale(0.1)';
-            content.style.transition = 'transform 0.3s ease';
-        });
-        
-        document.querySelector('.traffic-light.maximize').addEventListener('click', () => {
-            const window = document.querySelector('.window');
-            window.style.margin = window.style.margin === '0px' ? '20px' : '0px';
-            window.style.transition = 'margin 0.3s ease';
-        });
 </script>
 {% endblock %}
