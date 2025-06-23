@@ -30,11 +30,13 @@ def create_app(config_name='development'):
     from routes.main import main_bp
     from routes.drafts import drafts_bp
     from routes.api import api_bp
+    from routes.settings import settings_bp
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(main_bp)
     app.register_blueprint(drafts_bp, url_prefix='/drafts')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(settings_bp, url_prefix='/settings')
     
     # Error handlers
     @app.errorhandler(404)

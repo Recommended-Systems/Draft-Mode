@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="{{ session.get('theme', 'light') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Draft Mode{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Load light theme as default, then dark theme for override -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/light-theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -29,6 +33,7 @@
                 {% if session.user_id %}
                     <a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a>
                     <a href="{{ url_for('drafts.create_draft') }}" class="nav-link primary">New Draft</a>
+                    <a href="{{ url_for('settings.profile') }}" class="nav-link">Settings</a>
                     <a href="{{ url_for("auth.logout") }}" class="nav-link">Logout</a>
                 {% else %}
                     <a href="{{ url_for("auth.login") }}" class="nav-link">Sign In</a>
@@ -58,6 +63,16 @@
                         <div class="flash-messages">
                             {% for message in messages %}
                                 <div class="flash error">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                {% with messages = get_flashed_messages(category_filter=['success']) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for message in messages %}
+                                <div class="flash success">{{ message }}</div>
                             {% endfor %}
                         </div>
                     {% endif %}
@@ -113,7 +128,12 @@
             }
 
             renderIcon() {
-                this.iconCtx.fillStyle = '#000000';
+                // Get current theme colors
+                const theme = document.documentElement.getAttribute('data-theme') || 'light';
+                const bgColor = theme === 'light' ? '#ffffff' : '#000000';
+                const fgColor = theme === 'light' ? '#28a745' : '#00ff41';
+                
+                this.iconCtx.fillStyle = bgColor;
                 this.iconCtx.fillRect(0, 0, 40, 40);
                 
                 // Create off-screen canvas for icon
@@ -122,17 +142,22 @@
                 tempCanvas.width = 40;
                 tempCanvas.height = 40;
                 
-                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
                 tempCtx.font = 'bold 24px "JetBrains Mono", monospace';
                 tempCtx.textAlign = 'center';
                 tempCtx.textBaseline = 'middle';
                 tempCtx.fillText('D', 20, 20);
                 
-                this.applyDithering(tempCtx, this.iconCtx, 40, 40, this.iconPixelSize);
+                this.applyDithering(tempCtx, this.iconCtx, 40, 40, this.iconPixelSize, fgColor);
             }
 
             renderText() {
-                this.textCtx.fillStyle = '#000000';
+                // Get current theme colors
+                const theme = document.documentElement.getAttribute('data-theme') || 'light';
+                const bgColor = theme === 'light' ? '#ffffff' : '#000000';
+                const fgColor = theme === 'light' ? '#28a745' : '#00ff41';
+                
+                this.textCtx.fillStyle = bgColor;
                 this.textCtx.fillRect(0, 0, 200, 32);
                 
                 // Create off-screen canvas for text
@@ -141,16 +166,16 @@
                 tempCanvas.width = 200;
                 tempCanvas.height = 32;
                 
-                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
                 tempCtx.font = 'bold 16px "JetBrains Mono", monospace';
                 tempCtx.textAlign = 'left';
                 tempCtx.textBaseline = 'middle';
                 tempCtx.fillText('DRAFT MODE', 10, 16);
                 
-                this.applyDithering(tempCtx, this.textCtx, 200, 32, this.textPixelSize);
+                this.applyDithering(tempCtx, this.textCtx, 200, 32, this.textPixelSize, fgColor);
             }
 
-            applyDithering(sourceCtx, targetCtx, width, height, pixelSize) {
+            applyDithering(sourceCtx, targetCtx, width, height, pixelSize, color) {
                 const imageData = sourceCtx.getImageData(0, 0, width, height);
                 const data = imageData.data;
                 
@@ -175,7 +200,7 @@
                         const threshold = 128 + noise * (1 - this.distortion);
                         
                         if (brightness > threshold) {
-                            targetCtx.fillStyle = '#00ff41';
+                            targetCtx.fillStyle = color;
                             const offsetX = (Math.random() - 0.5) * 0.3 * (1 - this.distortion); // Minimal offset
                             const offsetY = (Math.random() - 0.5) * 0.3 * (1 - this.distortion);
                             
@@ -196,12 +221,38 @@
             }
         }
 
-        // Initialize logos
+        // Theme management
+        function updateTheme() {
+            const theme = document.documentElement.getAttribute('data-theme') || 'light';
+            // Recreate logos with new theme colors
+            const iconCanvas = document.getElementById('logoIconCanvas');
+            const textCanvas = document.getElementById('logoTextCanvas');
+            if (iconCanvas && textCanvas) {
+                new DitheredLogo(iconCanvas, textCanvas);
+            }
+        }
+
+        // Listen for theme changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+                    updateTheme();
+                }
+            });
+        });
+
+        // Initialize logos and theme observer
         document.addEventListener('DOMContentLoaded', function() {
             const iconCanvas = document.getElementById('logoIconCanvas');
             const textCanvas = document.getElementById('logoTextCanvas');
             if (iconCanvas && textCanvas) {
                 new DitheredLogo(iconCanvas, textCanvas);
+                
+                // Start observing theme changes
+                observer.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['data-theme']
+                });
             }
 
             // Mobile menu toggle

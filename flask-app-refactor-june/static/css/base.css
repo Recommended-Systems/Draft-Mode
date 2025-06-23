@@ -1,4 +1,5 @@
-:root {
+/* Dark theme overrides - only applied when data-theme="dark" */
+[data-theme="dark"] {
     /* High contrast color scheme */
     --bg-primary: #000000;
     --bg-secondary: #111111;
@@ -150,15 +151,29 @@ body {
     box-shadow: var(--glow-primary);
 }
 
+[data-theme="light"] .nav-link:hover {
+    color: #ffffff;
+}
+
 .nav-link.primary {
     background: var(--accent-green);
     color: var(--bg-primary);
     border-color: var(--accent-green);
 }
 
+[data-theme="light"] .nav-link.primary {
+    color: #ffffff;
+}
+
 .nav-link.primary:hover {
     background: var(--text-primary);
     border-color: var(--text-primary);
+}
+
+[data-theme="light"] .nav-link.primary:hover {
+    background: #218838;
+    border-color: #1e7e34;
+    color: #ffffff;
 }
 
 /* Mobile menu toggle */
@@ -274,6 +289,16 @@ h1 { font-size: 24px; }
 h2 { font-size: 20px; }
 h3 { font-size: 16px; }
 
+/* Dark theme text shadows */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+    text-shadow: var(--glow-primary);
+}
+
 /* Buttons */
 .btn {
     padding: 8px 16px;
@@ -300,6 +325,10 @@ h3 { font-size: 16px; }
     box-shadow: var(--glow-primary);
 }
 
+[data-theme="light"] .btn:hover {
+    color: #ffffff;
+}
+
 .btn:active {
     transform: translateY(1px);
 }
@@ -310,9 +339,19 @@ h3 { font-size: 16px; }
     border-color: var(--accent-green);
 }
 
+[data-theme="light"] .btn.primary {
+    color: #ffffff;
+}
+
 .btn.primary:hover {
     background: var(--text-primary);
     border-color: var(--text-primary);
+}
+
+[data-theme="light"] .btn.primary:hover {
+    background: #218838;
+    border-color: #1e7e34;
+    color: #ffffff;
 }
 
 .btn.danger {
@@ -321,10 +360,20 @@ h3 { font-size: 16px; }
     border-color: var(--accent-red);
 }
 
+[data-theme="light"] .btn.danger {
+    color: #ffffff;
+}
+
 .btn.danger:hover {
     background: var(--text-primary);
     border-color: var(--text-primary);
     color: var(--accent-red);
+}
+
+[data-theme="light"] .btn.danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
+    color: #ffffff;
 }
 
 /* Forms */
@@ -353,10 +402,22 @@ input, textarea, select {
     transition: all 0.2s ease;
 }
 
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+    background: #ffffff;
+}
+
 input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: var(--accent-green);
     box-shadow: 0 0 0 1px var(--accent-green);
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus {
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
 }
 
 /* Flash messages */
@@ -380,10 +441,22 @@ input:focus, textarea:focus, select:focus {
     border-color: var(--accent-red);
 }
 
+[data-theme="light"] .flash.error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
 .flash.success {
     background: var(--accent-green);
     color: var(--bg-primary);
     border-color: var(--accent-green);
+}
+
+[data-theme="light"] .flash.success {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
 }
 
 /* Breadcrumb */
@@ -403,6 +476,11 @@ input:focus, textarea:focus, select:focus {
 
 .breadcrumb a:hover {
     text-shadow: var(--glow-primary);
+}
+
+[data-theme="light"] .breadcrumb a:hover {
+    text-shadow: none;
+    text-decoration: underline;
 }
 
 .breadcrumb-separator {
@@ -498,6 +576,11 @@ input:focus, textarea:focus, select:focus {
     text-shadow: var(--glow-primary);
 }
 
+[data-theme="light"] .footer a:hover {
+    text-shadow: none;
+    text-decoration: underline;
+}
+
 .footer-heart {
     color: var(--accent-red);
     animation: pulse 2s infinite;
@@ -516,6 +599,10 @@ input:focus, textarea:focus, select:focus {
     backdrop-filter: blur(4px);
 }
 
+[data-theme="light"] .modal {
+    background: rgba(0, 0, 0, 0.5);
+}
+
 .modal-content {
     position: absolute;
     top: 50%;
@@ -527,6 +614,10 @@ input:focus, textarea:focus, select:focus {
     min-width: 300px;
     max-width: 90vw;
     box-shadow: 0 8px 32px rgba(0, 255, 65, 0.2);
+}
+
+[data-theme="light"] .modal-content {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {

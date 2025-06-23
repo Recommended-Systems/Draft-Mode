@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block window_title %}Profile & Settings - Draft Mode{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <span class="breadcrumb-separator">►</span>
+    <span style="color: var(--accent-green);">Settings</span>
+    <span class="breadcrumb-separator">►</span>
+    <span style="color: var(--text-secondary);">Profile</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <div class="settings-title">
+            <div class="title-icon">⚙️</div>
+            <h2>Profile & Settings</h2>
+        </div>
+    </div>
+
+    <div class="settings-grid">
+        <!-- Profile Information Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <h3>Profile Information</h3>
+                <p>Update your personal information and account details</p>
+            </div>
+            
+            <form method="POST" class="settings-form">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" value="{{ user.name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ user.email }}" required>
+                </div>
+                
+                <div class="form-divider"></div>
+                
+                <h4 class="subsection-title">Change Password</h4>
+                <p class="subsection-description">Leave blank if you don't want to change your password</p>
+                
+                <div class="form-group">
+                    <label for="current_password">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" placeholder="Enter current password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" name="new_password" placeholder="Enter new password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn primary">Update Profile</button>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Appearance Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <h3>Appearance</h3>
+                <p>Customize how Draft Mode looks and feels</p>
+            </div>
+            
+            <div class="settings-form">
+                <div class="form-group">
+                    <label for="theme-selector">Theme</label>
+                    <div class="theme-selector">
+                        <div class="theme-option" data-theme="light">
+                            <div class="theme-preview light-preview">
+                                <div class="preview-header"></div>
+                                <div class="preview-content">
+                                    <div class="preview-line"></div>
+                                    <div class="preview-line short"></div>
+                                </div>
+                            </div>
+                            <span class="theme-label">Light Mode</span>
+                            <input type="radio" name="theme" value="light" {% if session.get('theme', 'light') == 'light' %}checked{% endif %}>
+                        </div>
+                        
+                        <div class="theme-option" data-theme="dark">
+                            <div class="theme-preview dark-preview">
+                                <div class="preview-header"></div>
+                                <div class="preview-content">
+                                    <div class="preview-line"></div>
+                                    <div class="preview-line short"></div>
+                                </div>
+                            </div>
+                            <span class="theme-label">Dark Mode</span>
+                            <input type="radio" name="theme" value="dark" {% if session.get('theme', 'light') == 'dark' %}checked{% endif %}>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Stats Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <h3>Account Statistics</h3>
+                <p>Your activity and usage information</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Member Since</div>
+                    <div class="stat-value">{{ user.created_at.strftime('%B %Y') }}</div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-label">Total Drafts</div>
+                    <div class="stat-value">{{ user.total_drafts }}</div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-label">Total Versions</div>
+                    <div class="stat-value">{{ user.total_versions }}</div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-label">Last Updated</div>
+                    <div class="stat-value">{{ user.updated_at.strftime('%m/%d/%Y') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone Section -->
+        <div class="settings-section danger-section">
+            <div class="section-header">
+                <h3>Danger Zone</h3>
+                <p>Irreversible and destructive actions</p>
+            </div>
+            
+            <div class="danger-actions">
+                <button id="deleteAccountBtn" class="btn danger">Delete Account</button>
+                <p class="danger-description">
+                    This will permanently delete your account and all associated drafts. This action cannot be undone.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div id="deleteAccountModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Delete Account</h3>
+            <button class="modal-close" id="closeDeleteModalBtn">✕</button>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <p style="color: var(--accent-red); font-weight: 600; margin-bottom: 12px;">
+                ⚠️ This action cannot be undone!
+            </p>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 16px; line-height: 1.5;">
+                Deleting your account will permanently remove:
+            </p>
+            <ul style="color: var(--text-secondary); font-size: 12px; margin: 0 0 16px 20px; line-height: 1.5;">
+                <li>Your profile and account information</li>
+                <li>All your drafts and versions</li>
+                <li>All shared links to your drafts</li>
+                <li>All account statistics and history</li>
+            </ul>
+            <form id="deleteAccountForm" method="POST" action="{{ url_for('settings.delete_account') }}">
+                <div class="form-group">
+                    <label for="deletePassword">Enter your password to confirm</label>
+                    <input type="password" id="deletePassword" name="password" required placeholder="Enter your password">
+                </div>
+            </form>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button form="deleteAccountForm" type="submit" class="btn danger">Delete My Account</button>
+            <button id="cancelDeleteBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Theme switching
+    document.querySelectorAll('input[name="theme"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const theme = this.value;
+            
+            // Apply theme immediately
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Save to server
+            fetch('/settings/theme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme: theme })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Failed to save theme preference');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving theme:', error);
+            });
+        });
+    });
+
+    // Delete account modal
+    const deleteAccountModal = document.getElementById('deleteAccountModal');
+    const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+    const closeDeleteModalBtn = document.getElementById('closeDeleteModalBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+
+    deleteAccountBtn.addEventListener('click', () => {
+        deleteAccountModal.style.display = 'block';
+        document.getElementById('deletePassword').focus();
+    });
+
+    [closeDeleteModalBtn, cancelDeleteBtn].forEach(btn => {
+        btn.addEventListener('click', () => {
+            deleteAccountModal.style.display = 'none';
+            document.getElementById('deletePassword').value = '';
+        });
+    });
+
+    // Close modal on outside click
+    deleteAccountModal.addEventListener('click', (e) => {
+        if (e.target === deleteAccountModal) {
+            deleteAccountModal.style.display = 'none';
+            document.getElementById('deletePassword').value = '';
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && deleteAccountModal.style.display === 'block') {
+            deleteAccountModal.style.display = 'none';
+            document.getElementById('deletePassword').value = '';
+        }
+    });
+
+    // Form validation for password changes
+    const newPasswordField = document.getElementById('new_password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    const currentPasswordField = document.getElementById('current_password');
+
+    newPasswordField.addEventListener('input', function() {
+        if (this.value && !currentPasswordField.value) {
+            currentPasswordField.required = true;
+            currentPasswordField.parentElement.classList.add('required');
+        } else if (!this.value) {
+            currentPasswordField.required = false;
+            currentPasswordField.parentElement.classList.remove('required');
+        }
+    });
+
+    confirmPasswordField.addEventListener('input', function() {
+        if (newPasswordField.value !== this.value) {
+            this.setCustomValidity('Passwords do not match');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Apply current theme on page load
+    const currentTheme = '{{ session.get("theme", "light") }}';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+</script>
+{% endblock %}

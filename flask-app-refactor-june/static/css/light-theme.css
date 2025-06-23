@@ -1,0 +1,489 @@
+/* Light theme styles - this will be the default */
+:root {
+    /* Light theme color scheme */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --border-primary: #dee2e6;
+    --border-secondary: #ced4da;
+    
+    /* Accent colors for interactive elements */
+    --accent-green: #28a745;
+    --accent-red: #dc3545;
+    --accent-yellow: #ffc107;
+    --accent-blue: #007bff;
+    --accent-purple: #6f42c1;
+    
+    /* LED/Pixel effects */
+    --pixel-size: 2px;
+    --glow-primary: 0 0 10px rgba(40, 167, 69, 0.3);
+    --glow-secondary: 0 0 5px rgba(0, 123, 255, 0.3);
+    --scan-lines: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.02) 2px,
+        rgba(0, 0, 0, 0.02) 4px
+    );
+}
+
+/* Light theme specific button styles */
+[data-theme="light"] .btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .btn:hover {
+    background: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+    box-shadow: var(--glow-primary);
+}
+
+[data-theme="light"] .btn.primary {
+    background: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+}
+
+[data-theme="light"] .btn.primary:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
+[data-theme="light"] .btn.danger {
+    background: var(--accent-red);
+    color: #ffffff;
+    border-color: var(--accent-red);
+}
+
+[data-theme="light"] .btn.danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
+}
+
+/* Light theme nav styles */
+[data-theme="light"] .top-nav {
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-primary);
+    box-shadow: 0 2px 0 var(--accent-green);
+}
+
+[data-theme="light"] .nav-link {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .nav-link:hover {
+    background: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+    box-shadow: var(--glow-primary);
+}
+
+[data-theme="light"] .nav-link.primary {
+    background: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+}
+
+[data-theme="light"] .nav-link.primary:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
+/* Light theme form styles */
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+    background: #ffffff;
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+}
+
+/* Light theme window styles */
+[data-theme="light"] .window {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-primary);
+    box-shadow: 
+        inset 0 0 0 1px var(--border-secondary),
+        0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .title-bar {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .content {
+    background: var(--bg-primary);
+}
+
+/* Light theme flash messages */
+[data-theme="light"] .flash.error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+[data-theme="light"] .flash.success {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+/* Light theme editor styles */
+[data-theme="light"] .editor-toolbar {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .editor-panel {
+    background: var(--bg-secondary);
+}
+
+[data-theme="light"] .panel-header {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .editor-content,
+[data-theme="light"] .preview-content {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .editor-textarea {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Light theme preview content styling */
+[data-theme="light"] .preview-content h1,
+[data-theme="light"] .preview-content h2,
+[data-theme="light"] .preview-content h3,
+[data-theme="light"] .preview-content h4,
+[data-theme="light"] .preview-content h5,
+[data-theme="light"] .preview-content h6 {
+    color: var(--accent-green);
+    text-shadow: none;
+}
+
+[data-theme="light"] .preview-content code {
+    background: var(--bg-tertiary);
+    color: var(--accent-green);
+    border: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .preview-content pre {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .preview-content blockquote {
+    border-left: 3px solid var(--accent-green);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+/* Light theme dashboard styles */
+[data-theme="light"] .stats-bar .stat-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .draft-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .draft-card:hover {
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+}
+
+[data-theme="light"] .draft-status.final {
+    background: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+    box-shadow: 0 0 4px rgba(40, 167, 69, 0.3);
+}
+
+[data-theme="light"] .draft-status.active {
+    background: var(--accent-yellow);
+    color: #000000;
+    border-color: var(--accent-yellow);
+    box-shadow: 0 0 4px rgba(255, 193, 7, 0.3);
+}
+
+[data-theme="light"] .draft-status.empty {
+    background: var(--accent-red);
+    color: #ffffff;
+    border-color: var(--accent-red);
+    box-shadow: 0 0 4px rgba(220, 53, 69, 0.3);
+}
+
+/* Light theme modal styles */
+[data-theme="light"] .modal {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] .modal-content {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-primary);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .modal-header {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .modal-close {
+    border: 1px solid var(--border-primary);
+    color: var(--text-muted);
+}
+
+[data-theme="light"] .modal-close:hover {
+    color: var(--accent-red);
+    border-color: var(--accent-red);
+}
+
+/* Light theme settings styles */
+[data-theme="light"] .settings-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .theme-option {
+    border: 2px solid var(--border-primary);
+    background: var(--bg-tertiary);
+}
+
+[data-theme="light"] .theme-option:hover {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.2);
+}
+
+[data-theme="light"] .theme-option:has(input[type="radio"]:checked) {
+    border-color: var(--accent-green);
+    background: var(--bg-primary);
+    box-shadow: 0 0 12px rgba(40, 167, 69, 0.3);
+}
+
+[data-theme="light"] .stat-item {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+}
+
+/* Light theme compare/diff styles */
+[data-theme="light"] .diff-container {
+    background: var(--bg-primary);
+    border: 3px solid var(--border-primary);
+}
+
+[data-theme="light"] .diff-header {
+    background: var(--bg-tertiary);
+    border-bottom: 2px solid var(--border-primary);
+}
+
+[data-theme="light"] .diff-side-header {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .diff-removed {
+    background: #ffeef0;
+    border-left-color: #dc3545;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .diff-added {
+    background: #f0fff4;
+    border-left-color: #28a745;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .diff-modified {
+    background: #fff3cd;
+    border-left-color: #ffc107;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .diff-unchanged {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .word-added,
+[data-theme="light"] .char-added {
+    background: rgba(40, 167, 69, 0.3);
+    color: #155724;
+}
+
+[data-theme="light"] .word-removed,
+[data-theme="light"] .char-removed {
+    background: rgba(220, 53, 69, 0.3);
+    color: #721c24;
+}
+
+/* Light theme public view styles */
+[data-theme="light"] .header {
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-primary);
+    box-shadow: 0 2px 0 var(--accent-green);
+}
+
+[data-theme="light"] .article-container {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-primary);
+    box-shadow: 
+        inset 0 0 0 1px var(--border-secondary),
+        0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .article-header {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .article-content {
+    background: var(--bg-primary);
+}
+
+[data-theme="light"] .footer-cta {
+    background: var(--bg-secondary);
+    border-top: 2px solid var(--border-primary);
+    box-shadow: 0 -2px 0 var(--accent-green);
+}
+
+[data-theme="light"] .footer {
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border-primary);
+}
+
+/* Light theme error pages */
+[data-theme="light"] .error-graphic {
+    background: var(--bg-tertiary);
+    border: 2px solid var(--accent-red);
+}
+
+[data-theme="light"] .error-details {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-muted);
+}
+
+/* Light theme breadcrumb */
+[data-theme="light"] .breadcrumb {
+    border-bottom: 1px solid var(--border-primary);
+}
+
+[data-theme="light"] .breadcrumb a {
+    color: var(--accent-green);
+}
+
+/* Light theme version badges and indicators */
+[data-theme="light"] .version-badge {
+    border: 1px solid;
+    box-shadow: 0 0 4px;
+}
+
+[data-theme="light"] .version-badge.active {
+    background: var(--accent-yellow);
+    color: #000000;
+    border-color: var(--accent-yellow);
+    box-shadow: 0 0 4px rgba(255, 193, 7, 0.3);
+}
+
+[data-theme="light"] .version-badge.final {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+    box-shadow: 0 0 4px rgba(40, 167, 69, 0.3);
+    color: #ffffff;
+}
+
+[data-theme="light"] .version-indicator {
+    background: var(--accent-green);
+    border: 1px solid var(--bg-primary);
+    box-shadow: 0 0 2px rgba(40, 167, 69, 0.3);
+}
+
+/* Light theme column buttons */
+[data-theme="light"] .column-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .column-btn:hover {
+    background: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+    box-shadow: var(--glow-primary);
+}
+
+[data-theme="light"] .column-btn.primary {
+    background: var(--accent-green);
+    color: #ffffff;
+    border-color: var(--accent-green);
+}
+
+[data-theme="light"] .column-btn.warning {
+    background: var(--accent-yellow);
+    color: #000000;
+    border-color: var(--accent-yellow);
+}
+
+/* Light theme save indicators */
+[data-theme="light"] .save-indicator {
+    background: var(--accent-green);
+    box-shadow: 0 0 4px rgba(40, 167, 69, 0.3);
+}
+
+[data-theme="light"] .save-indicator.saving {
+    background: var(--accent-yellow);
+    box-shadow: 0 0 4px rgba(255, 193, 7, 0.3);
+}
+
+[data-theme="light"] .save-indicator.error {
+    background: var(--accent-red);
+    box-shadow: 0 0 4px rgba(220, 53, 69, 0.3);
+}
+
+/* Remove scan lines and heavy shadows in light mode */
+[data-theme="light"] body {
+    background-image: var(--scan-lines);
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+    text-shadow: none;
+}
+
+/* Light theme text selections */
+[data-theme="light"] ::selection {
+    background: rgba(40, 167, 69, 0.3);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] ::-moz-selection {
+    background: rgba(40, 167, 69, 0.3);
+    color: var(--text-primary);
+}
