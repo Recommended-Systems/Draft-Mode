@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draft Mode - The Missing Piece Between Writing and Publishing</title>
+    <meta name="description" content="Professional version control for content creators. Write, iterate, and publish with confidence. Never lose a good idea again.">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Light theme as default */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border-primary: #e2e8f0;
+            --border-secondary: #cbd5e1;
+            
+            /* Warmer color palette */
+            --accent-primary: #2563eb;
+            --accent-secondary: #7c3aed;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            
+            /* Softer effects */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-primary: #334155;
+            --border-secondary: #475569;
+            
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-primary);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .header {
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-primary);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: var(--bg-secondary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn.primary {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .btn.primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn.large {
+            padding: 16px 32px;
+            font-size: 16px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 20px 80px;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        }
+
+        .hero-content {
+            max-width: 900px;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--accent-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            display: inline-block;
+        }
+
+        .hero-title {
+            font-size: clamp(36px, 8vw, 64px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(18px, 3vw, 24px);
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 80px;
+        }
+
+        .hero-demo {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 0 auto 60px;
+            max-width: 600px;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .demo-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .demo-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-danger);
+        }
+
+        .demo-dot.yellow {
+            background: var(--accent-warning);
+        }
+
+        .demo-dot.green {
+            background: var(--accent-success);
+        }
+
+        .demo-content {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .demo-line {
+            margin: 4px 0;
+        }
+
+        .demo-added {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-success);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .demo-removed {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-danger);
+            padding: 2px 4px;
+            border-radius: 4px;
+            text-decoration: line-through;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 48px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 120px 20px;
+            background: var(--bg-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-badge {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--accent-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 32px;
+            margin-top: 80px;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--accent-primary);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--accent-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 24px;
+            color: white;
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .feature-benefits {
+            list-style: none;
+        }
+
+        .feature-benefits li {
+            color: var(--text-secondary);
+            padding: 6px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .feature-benefits li::before {
+            content: '✓';
+            color: var(--accent-success);
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+        }
+
+        /* Problem/Solution Section */
+        .problem-solution {
+            padding: 120px 20px;
+            background: var(--bg-secondary);
+        }
+
+        .ps-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        .problem-side, .solution-side {
+            padding: 40px;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .problem-side {
+            border: 2px solid var(--accent-danger);
+            background: var(--bg-primary);
+        }
+
+        .solution-side {
+            border: 2px solid var(--accent-success);
+            background: var(--bg-primary);
+        }
+
+        .ps-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .problem-side .ps-title {
+            color: var(--accent-danger);
+        }
+
+        .solution-side .ps-title {
+            color: var(--accent-success);
+        }
+
+        .ps-content {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .ps-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .ps-list li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .problem-side .ps-list li::before {
+            content: '✗';
+            color: var(--accent-danger);
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+        }
+
+        .solution-side .ps-list li::before {
+            content: '✓';
+            color: var(--accent-success);
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+        }
+
+        /* Pricing */
+        .pricing {
+            padding: 120px 20px;
+            background: var(--bg-primary);
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 32px;
+            margin-top: 80px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--accent-primary);
+            transform: scale(1.05);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .pricing-card.featured::before {
+            content: 'MOST POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-primary);
+            color: white;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .plan-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .plan-price {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .plan-period {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 32px;
+            text-align: left;
+        }
+
+        .plan-features li {
+            padding: 10px 0;
+            color: var(--text-secondary);
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .plan-features li::before {
+            content: '✓';
+            color: var(--accent-success);
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+        }
+
+        .plan-features li.unavailable {
+            opacity: 0.5;
+        }
+
+        .plan-features li.unavailable::before {
+            content: '–';
+            color: var(--text-muted);
+        }
+
+        /* Final CTA */
+        .final-cta {
+            padding: 120px 20px;
+            background: var(--bg-secondary);
+            text-align: center;
+        }
+
+        .cta-content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cta-title {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+
+        .cta-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
+        }
+
+        .trust-signals {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 60px;
+        }
+
+        .trust-item {
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .trust-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: var(--accent-success);
+        }
+
+        .trust-label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-primary);
+            padding: 60px 20px 30px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .footer-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--accent-primary);
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 100px 20px 60px;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .ps-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .pricing-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-card.featured {
+                transform: none;
+            }
+
+            .trust-signals {
+                flex-direction: column;
+                gap: 24px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-content > * {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .hero-badge { animation-delay: 0.1s; }
+        .hero-title { animation-delay: 0.2s; }
+        .hero-subtitle { animation-delay: 0.3s; }
+        .hero-cta { animation-delay: 0.4s; }
+        .hero-demo { animation-delay: 0.5s; }
+        .hero-stats { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">Draft Mode</div>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <a href="/auth/login" class="btn">Sign In</a>
+                <a href="/auth/signup" class="btn primary">Start Free</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">✨ Free forever. No credit card required.</div>
+            
+            <h1 class="hero-title">The Missing Piece Between Writing and Publishing</h1>
+            
+            <p class="hero-subtitle">
+                Professional version control for content creators. Write, iterate, and publish with confidence. Never lose a good idea again.
+            </p>
+            
+            <div class="hero-cta">
+                <a href="/auth/signup" class="btn primary large">Start Writing for Free</a>
+                <a href="#features" class="btn large">See How It Works</a>
+            </div>
+
+            <!-- Demo Visualization -->
+            <div class="hero-demo">
+                <div class="demo-header">
+                    <div class="demo-dot"></div>
+                    <div class="demo-dot yellow"></div>
+                    <div class="demo-dot green"></div>
+                    <span style="margin-left: 12px; font-weight: 600; color: var(--text-secondary);">Version Comparison</span>
+                </div>
+                <div class="demo-content">
+                    <div class="demo-line">The future of AI will be <span class="demo-removed">revolutionary</span><span class="demo-added">transformative</span></div>
+                    <div class="demo-line">and will change how we work <span class="demo-added">fundamentally</span>.</div>
+                    <div class="demo-line"><span class="demo-removed">It's going to be huge.</span></div>
+                    <div class="demo-line"><span class="demo-added">The implications for productivity are immense.</span></div>
+                </div>
+            </div>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">1,200+</div>
+                    <div class="stat-label">Active Writers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">25,000+</div>
+                    <div class="stat-label">Versions Tracked</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Lost Drafts</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">🚀 Core Features</div>
+                <h2 class="section-title">Everything You Need to Write Better</h2>
+                <p class="section-subtitle">
+                    Stop the "final_v2_ACTUALLY_final.docx" madness. Bring order to your creative process.
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3 class="feature-title">Smart Version Control</h3>
+                    <p class="feature-description">
+                        Create unlimited versions without losing track. Every change is saved, organized, and easily accessible.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li>Unlimited draft versions</li>
+                        <li>Automatic version timestamps</li>
+                        <li>One-click version switching</li>
+                        <li>Mark versions as "final"</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Visual Comparison</h3>
+                    <p class="feature-description">
+                        Side-by-side diffs show exactly what changed. See your writing evolution at a glance.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li>GitHub-style diff view</li>
+                        <li>Word-level highlighting</li>
+                        <li>Compare any two versions</li>
+                        <li>Track content evolution</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3 class="feature-title">Effortless Sharing</h3>
+                    <p class="feature-description">
+                        Share specific versions with anyone. No more email confusion or wrong file versions.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li>Public share links</li>
+                        <li>Version-specific sharing</li>
+                        <li>Professional presentation</li>
+                        <li>No login required for viewers</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">✍️</div>
+                    <h3 class="feature-title">Distraction-Free Editor</h3>
+                    <p class="feature-description">
+                        Clean, focused writing environment with live Markdown preview. Just you and your words.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li>Real-time Markdown preview</li>
+                        <li>Auto-save every 2 seconds</li>
+                        <li>Export to multiple formats</li>
+                        <li>Keyboard shortcuts</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3 class="feature-title">Built for Teams</h3>
+                    <p class="feature-description">
+                        Collaborate seamlessly with team members, clients, and editors. Everyone stays in sync.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li>Team workspaces (coming soon)</li>
+                        <li>Comment & review system (coming soon)</li>
+                        <li>Access permissions (coming soon)</li>
+                        <li>Team analytics (coming soon)</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3 class="feature-title">Publish Everywhere</h3>
+                    <p class="feature-description">
+                        One-click publishing to your favorite platforms. Your content, everywhere it needs to be.
+                    </p>
+                    <ul class="feature-benefits">
+                        <li>WordPress integration (coming soon)</li>
+                        <li>Ghost publishing (coming soon)</li>
+                        <li>Substack export (coming soon)</li>
+                        <li>Custom webhooks (coming soon)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem/Solution Section -->
+    <section class="problem-solution">
+        <div class="container">
+            <div class="ps-grid">
+                <div class="problem-side">
+                    <h3 class="ps-title">The Writer's Dilemma</h3>
+                    <div class="ps-content">
+                        <p>Every content creator faces the same chaos:</p>
+                        <ul class="ps-list">
+                            <li>Multiple file versions everywhere</li>
+                            <li>Great ideas lost in revision hell</li>
+                            <li>Clients confused about which version is current</li>
+                            <li>Fear of making changes and losing good content</li>
+                            <li>No way to track your writing evolution</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="solution-side">
+                    <h3 class="ps-title">Your Creative Command Center</h3>
+                    <div class="ps-content">
+                        <p>Draft Mode brings professional workflows to content creation:</p>
+                        <ul class="ps-list">
+                            <li>Every version automatically saved and organized</li>
+                            <li>Visual diffs show exactly what changed</li>
+                            <li>Share specific versions with crystal clarity</li>
+                            <li>Experiment freely without fear of losing work</li>
+                            <li>Track your content's evolution over time</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">💰 Simple Pricing</div>
+                <h2 class="section-title">Start Free, Scale When Ready</h2>
+                <p class="section-subtitle">
+                    Generous free tier for solo creators. Fair pricing for growing teams.
+                </p>
+            </div>
+            
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3 class="plan-name">Creator</h3>
+                    <div class="plan-price">$0</div>
+                    <div class="plan-period">Forever free</div>
+                    
+                    <ul class="plan-features">
+                        <li>10 projects</li>
+                        <li>Unlimited versions per project</li>
+                        <li>Visual diff comparison</li>
+                        <li>Public sharing links</li>
+                        <li>Markdown export</li>
+                        <li>Auto-save & backup</li>
+                        <li class="unavailable">Team collaboration</li>
+                        <li class="unavailable">Publishing integrations</li>
+                    </ul>
+                    
+                    <a href="/auth/signup" class="btn primary large" style="width: 100%;">Start Free</a>
+                </div>
+                
+                <div class="pricing-card featured">
+                    <h3 class="plan-name">Professional</h3>
+                    <div class="plan-price">$12</div>
+                    <div class="plan-period">per month</div>
+                    
+                    <ul class="plan-features">
+                        <li>Unlimited projects</li>
+                        <li>Everything in Creator</li>
+                        <li>Team workspaces (up to 5 members)</li>
+                        <li>Comment & review system</li>
+                        <li>Publishing integrations</li>
+                        <li>Custom sharing permissions</li>
+                        <li>Priority support</li>
+                        <li>Advanced analytics</li>
+                    </ul>
+                    
+                    <button class="btn large" style="width: 100%; opacity: 0.7;" disabled>Coming Q2 2025</button>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3 class="plan-name">Enterprise</h3>
+                    <div class="plan-price">Custom</div>
+                    <div class="plan-period">Contact sales</div>
+                    
+                    <ul class="plan-features">
+                        <li>Everything in Professional</li>
+                        <li>Unlimited team members</li>
+                        <li>SSO & advanced security</li>
+                        <li>API access</li>
+                        <li>Custom integrations</li>
+                        <li>Dedicated support</li>
+                        <li>On-premise deployment</li>
+                        <li>SLA guarantees</li>
+                    </ul>
+                    
+                    <a href="mailto:sales@Draft Mode.com" class="btn large" style="width: 100%;">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="final-cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Transform Your Writing Workflow?</h2>
+                <p class="cta-subtitle">
+                    Join over 1,200 content creators who've already upgraded their writing process. 
+                    Start free, no credit card required.
+                </p>
+                
+                <div class="cta-buttons">
+                    <a href="/auth/signup" class="btn primary large">Start Writing for Free</a>
+                    <a href="/auth/login" class="btn large">Sign In</a>
+                </div>
+                
+                <div class="trust-signals">
+                    <div class="trust-item">
+                        <div class="trust-icon">🔒</div>
+                        <div class="trust-label">Your Data is Safe</div>
+                    </div>
+                    <div class="trust-item">
+                        <div class="trust-icon">⚡</div>
+                        <div class="trust-label">Start in 30 Seconds</div>
+                    </div>
+                    <div class="trust-item">
+                        <div class="trust-icon">💸</div>
+                        <div class="trust-label">No Credit Card</div>
+                    </div>
+                    <div class="trust-item">
+                        <div class="trust-icon">🎯</div>
+                        <div class="trust-label">Cancel Anytime</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="mailto:support@Draft Mode.com" class="footer-link">Contact</a>
+                <a href="#" class="footer-link">Documentation</a>
+                <a href="#" class="footer-link">Blog</a>
+            </div>
+            
+            <div class="footer-text">
+                © 2025 Draft Mode • Made with ♥ by Recommended Systems
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            
+            const themeBtn = document.querySelector('.theme-toggle');
+            themeBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            
+            // Save preference
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            const themeBtn = document.querySelector('.theme-toggle');
+            themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Header background on scroll
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.style.background = document.documentElement.getAttribute('data-theme') === 'dark' 
+                    ? 'rgba(15, 23, 42, 0.98)' 
+                    : 'rgba(255, 255, 255, 0.98)';
+                header.style.backdropFilter = 'blur(20px)';
+                header.style.boxShadow = '0 1px 3px 0 rgb(0 0 0 / 0.1)';
+            } else {
+                header.style.background = document.documentElement.getAttribute('data-theme') === 'dark' 
+                    ? 'rgba(15, 23, 42, 0.95)' 
+                    : 'rgba(255, 255, 255, 0.95)';
+                header.style.backdropFilter = 'blur(10px)';
+                header.style.boxShadow = 'none';
+            }
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for scroll animations
+        document.querySelectorAll('.feature-card, .pricing-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Enhanced hover effects
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px)';
+                this.style.boxShadow = '0 25px 50px -12px rgb(0 0 0 / 0.25)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'var(--shadow-xl)';
+            });
+        });
+
+        // CTA button interactions
+        document.querySelectorAll('.btn.primary').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04)';
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(-1px)';
+                this.style.boxShadow = 'var(--shadow-lg)';
+            });
+        });
+
+        // Demo animation
+        function animateDemo() {
+            const demoLines = document.querySelectorAll('.demo-line');
+            demoLines.forEach((line, index) => {
+                setTimeout(() => {
+                    line.style.opacity = '0.5';
+                    setTimeout(() => {
+                        line.style.opacity = '1';
+                    }, 200);
+                }, index * 300);
+            });
+        }
+
+        // Start demo animation after page load
+        setTimeout(animateDemo, 2000);
+        setInterval(animateDemo, 8000);
+
+        // Mobile menu (simple implementation)
+        const createMobileMenu = () => {
+            if (window.innerWidth <= 768) {
+                const navLinks = document.querySelector('.nav-links');
+                if (navLinks && !document.querySelector('.mobile-menu-btn')) {
+                    const mobileBtn = document.createElement('button');
+                    mobileBtn.className = 'mobile-menu-btn btn';
+                    mobileBtn.textContent = '☰';
+                    mobileBtn.onclick = () => {
+                        navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+                        navLinks.style.position = 'absolute';
+                        navLinks.style.top = '100%';
+                        navLinks.style.left = '0';
+                        navLinks.style.right = '0';
+                        navLinks.style.background = 'var(--bg-secondary)';
+                        navLinks.style.flexDirection = 'column';
+                        navLinks.style.padding = '20px';
+                        navLinks.style.border = '1px solid var(--border-primary)';
+                    };
+                    document.querySelector('.nav-container').appendChild(mobileBtn);
+                }
+            }
+        };
+
+        window.addEventListener('resize', createMobileMenu);
+        createMobileMenu();
+
+        // Track conversions
+        document.querySelectorAll('a[href="/auth/signup"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Analytics tracking would go here
+                console.log('Conversion tracked:', this.textContent, window.location.pathname);
+            });
+        });
+    </script>
+</body>
+</html>
