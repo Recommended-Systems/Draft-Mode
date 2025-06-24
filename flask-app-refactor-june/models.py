@@ -76,8 +76,7 @@ class BlogDraft(db.Model):
     @property
     def has_final_version(self):
         """Check if any version is marked as final"""
-        return any('final' in version.version_name.lower() or 'published' in version.version_name.lower() 
-                  for version in self.versions)
+        return any(version.tag == 'final' for version in self.versions)
     
     @property
     def status(self):
@@ -104,6 +103,7 @@ class DraftVersion(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_current = db.Column(db.Boolean, default=False)
     share_token = db.Column(db.String(32), unique=True, nullable=True, index=True)
+    tag = db.Column(db.String(50), default='draft')  # New tag field: draft, final, ready_for_review, working
     
     def generate_share_token(self):
         """Generate a unique share token for public access"""
@@ -123,13 +123,34 @@ class DraftVersion(db.Model):
     @property
     def is_final(self):
         """Check if this version is marked as final"""
-        return 'final' in self.version_name.lower() or 'published' in self.version_name.lower()
+        return self.tag == 'final'
+    
+    @property
+    def display_name(self):
+        """Get display name with tag if not draft"""
+        if not self.tag or self.tag == 'draft':
+            return self.version_name
+        else:
+            tag_display = {
+                'final': 'FINAL',
+                'ready_for_review': 'REVIEW', 
+                'working': 'WORKING'
+            }.get(self.tag, self.tag.upper())
+            return f"{self.version_name} [{tag_display}]"
     
     def set_as_current(self):
         """Set this version as the current one"""
         # Unset other current versions for this draft
         DraftVersion.query.filter_by(blog_draft_id=self.blog_draft_id, is_current=True).update({'is_current': False})
         self.is_current = True
+        db.session.commit()
+    
+    def set_tag(self, new_tag):
+        """Set tag and ensure uniqueness for special tags"""
+        if new_tag in ['final', 'ready_for_review', 'working']:
+            # Remove this tag from other versions in the same draft
+            DraftVersion.query.filter_by(blog_draft_id=self.blog_draft_id, tag=new_tag).update({'tag': 'draft'})
+        self.tag = new_tag
         db.session.commit()
     
     def __repr__(self):

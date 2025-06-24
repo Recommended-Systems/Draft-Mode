@@ -242,19 +242,35 @@
     color: var(--text-primary);
 }
 
-/* Inline word/character highlighting with muted colors */
+/* Updated highlight colors - yellow background with black text */
 .word-added, .char-added {
-    background: rgba(63, 185, 80, 0.3);
-    color: #aff5b4;
+    background: #ffdd00;
+    color: #000000;
     padding: 1px 2px;
     border-radius: 2px;
 }
 
 .word-removed, .char-removed {
-    background: rgba(248, 81, 73, 0.3);
-    color: #ffdcd7;
+    background: #ffdd00;
+    color: #000000;
     padding: 1px 2px;
     border-radius: 2px;
+    text-decoration: line-through;
+}
+
+/* Apply yellow highlight to all selection contexts */
+.diff-content ::selection,
+.diff-line ::selection,
+.line-content ::selection {
+    background: #ffdd00;
+    color: #000000;
+}
+
+.diff-content ::-moz-selection,
+.diff-line ::-moz-selection,
+.line-content ::-moz-selection {
+    background: #ffdd00;
+    color: #000000;
 }
 
 /* Mobile adjustments */

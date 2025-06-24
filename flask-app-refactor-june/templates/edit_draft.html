@@ -8,11 +8,11 @@
 
 {% block breadcrumb %}
 <div class="breadcrumb">
-    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-    <span class="breadcrumb-separator">►</span>
-    <span style="color: var(--accent-green);">{{ draft.title }}</span>
-    <span class="breadcrumb-separator">►</span>
-    <span style="color: var(--text-secondary);">Editor</span>
+    <a href="{{ url_for('main.dashboard') }}" style="font-size: 10px;">Dashboard</a>
+    <span class="breadcrumb-separator" style="font-size: 10px;">►</span>
+    <span style="color: var(--accent-green); font-size: 10px;">{{ draft.title }}</span>
+    <span class="breadcrumb-separator" style="font-size: 10px;">►</span>
+    <span style="color: var(--text-secondary); font-size: 10px;">Editor</span>
 </div>
 {% endblock %}
 
@@ -27,16 +27,38 @@
                 <select id="versionSelector" class="version-selector" onchange="switchVersion(this.value)">
                     {% for version in versions %}
                         <option value="{{ version.id }}" {% if version.id == current_version.id %}selected{% endif %}>
-                            {{ version.version_name }}
-                            {% if 'final' in version.version_name.lower() or 'published' in version.version_name.lower() %} [FINAL]{% endif %}
+                            {% if version.tag and version.tag != 'draft' %}
+                                {% if version.tag == 'final' %}
+                                    {{ version.version_name }} [FINAL]
+                                {% elif version.tag == 'ready_for_review' %}
+                                    {{ version.version_name }} [REVIEW]
+                                {% elif version.tag == 'working' %}
+                                    {{ version.version_name }} [WORKING]
+                                {% else %}
+                                    {{ version.version_name }}
+                                {% endif %}
+                            {% else %}
+                                {{ version.version_name }}
+                            {% endif %}
                         </option>
                     {% endfor %}
                 </select>
-                {% if 'final' in current_version.version_name.lower() or 'published' in current_version.version_name.lower() %}
-                    <span class="version-badge final">Final</span>
-                {% else %}
-                    <span class="version-badge active">Draft</span>
-                {% endif %}
+                
+                <div class="version-info-section">
+                    <div class="version-tags-row">
+                        {% if current_version.tag == 'final' %}
+                            <span class="version-badge final">Final</span>
+                        {% elif current_version.tag == 'ready_for_review' %}
+                            <span class="version-badge review">Review</span>
+                        {% elif current_version.tag == 'working' %}
+                            <span class="version-badge working">Working</span>
+                        {% else %}
+                            <span class="version-badge draft">Draft</span>
+                        {% endif %}
+                        
+                        <button id="renameVersionBtn" class="tag-btn">Rename</button>
+                    </div>
+                </div>
             </div>
             
             <button id="saveBtn" class="column-btn primary">Save Version</button>
@@ -45,13 +67,6 @@
                 <div class="save-indicator" id="saveIndicator"></div>
                 <span id="saveStatus">Ready</span>
             </div>
-            
-            <button id="renameVersionBtn" class="column-btn">Rename Version</button>
-            
-            <div class="status-icon">
-                <div class="status-dot"></div>
-                <span>Online</span>
-            </div>
         </div>
     </div>
     
@@ -59,13 +74,35 @@
     <div class="toolbar-column">
         <div class="column-header">Versions</div>
         <div class="column-content">
+            <div class="version-label">Set Version Status:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;">
+                <button class="tag-btn {% if current_version.tag == 'draft' or not current_version.tag %}active{% endif %}" data-tag="draft">Draft</button>
+                <button class="tag-btn working {% if current_version.tag == 'working' %}active{% endif %}" data-tag="working">Working</button>
+                <button class="tag-btn review {% if current_version.tag == 'ready_for_review' %}active{% endif %}" data-tag="ready_for_review">Review</button>
+                <button class="tag-btn final {% if current_version.tag == 'final' %}active{% endif %}" data-tag="final">Final</button>
+            </div>
+            
             <div class="compare-section">
                 <div class="compare-label">Compare Against:</div>
                 <select id="compareVersion" class="version-selector">
                     <option value="">Select version...</option>
                     {% for version in versions %}
                         {% if version.id != current_version.id %}
-                        <option value="{{ version.id }}">{{ version.version_name }}</option>
+                        <option value="{{ version.id }}">
+                            {% if version.tag and version.tag != 'draft' %}
+                                {% if version.tag == 'final' %}
+                                    {{ version.version_name }} [FINAL]
+                                {% elif version.tag == 'ready_for_review' %}
+                                    {{ version.version_name }} [REVIEW]
+                                {% elif version.tag == 'working' %}
+                                    {{ version.version_name }} [WORKING]
+                                {% else %}
+                                    {{ version.version_name }}
+                                {% endif %}
+                            {% else %}
+                                {{ version.version_name }}
+                            {% endif %}
+                        </option>
                         {% endif %}
                     {% endfor %}
                 </select>
@@ -73,7 +110,6 @@
             
             <div class="column-buttons">
                 <button id="newVersionBtn" class="column-btn">New Version</button>
-                <button id="markFinalBtn" class="column-btn warning">Mark as Final</button>
             </div>
         </div>
     </div>
@@ -85,7 +121,6 @@
             <div class="column-buttons">
                 <button id="shareBtn" class="column-btn">Share Version</button>
                 <button id="exportBtn" class="column-btn">Export .MD</button>
-                <a href="{{ url_for('main.dashboard') }}" class="column-btn">← Dashboard</a>
             </div>
         </div>
     </div>
@@ -137,6 +172,7 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     </div>
     <div class="action-buttons">
         <button id="fullscreenBtn" class="btn">Fullscreen</button>
+        <a href="{{ url_for('main.dashboard') }}" class="btn">← Dashboard</a>
     </div>
 </div>
 
@@ -176,25 +212,21 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     </div>
 </div>
 
-<!-- Mark as Final Modal -->
-<div id="markFinalModal" class="modal">
+<!-- Tag Change Confirmation Modal -->
+<div id="tagChangeModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Mark as Final</h3>
-            <button class="modal-close" id="closeFinalModalBtn">✕</button>
+            <h3 class="modal-title">Change Version Status</h3>
+            <button class="modal-close" id="closeTagModalBtn">✕</button>
         </div>
         <div style="margin-bottom: 16px;">
-            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;">
-                This will rename the current version to include "Final" in the name and mark it as the definitive version.
+            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;" id="tagChangeMessage">
+                <!-- Dynamic message will be inserted here -->
             </p>
-            <div class="form-group">
-                <label for="finalVersionName">Final Version Name</label>
-                <input type="text" id="finalVersionName" placeholder="e.g. Final Draft, Published Version">
-            </div>
         </div>
         <div style="margin-top: 20px; display: flex; gap: 8px;">
-            <button id="confirmMarkFinalBtn" class="btn warning">Mark as Final</button>
-            <button id="cancelMarkFinalBtn" class="btn">Cancel</button>
+            <button id="confirmTagChangeBtn" class="btn warning">Change Status</button>
+            <button id="cancelTagChangeBtn" class="btn">Cancel</button>
         </div>
     </div>
 </div>
@@ -230,6 +262,7 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     let draftId = {{ draft.id }};
     let autoSaveTimeout;
     let lastSavedContent = document.getElementById('contentEditor').value;
+    let pendingTag = null;
     
     // Version switching
     function switchVersion(versionId) {
@@ -314,6 +347,53 @@ Ready to begin? Start typing and watch the preview update in real-time!"
         });
     }
     
+    // Tag management
+    document.querySelectorAll('.tag-btn[data-tag]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const newTag = this.dataset.tag;
+            const currentTag = '{{ current_version.tag }}';
+            
+            if (newTag === currentTag) return; // No change needed
+            
+            // Check if this tag needs confirmation (for unique tags)
+            if (['final', 'ready_for_review', 'working'].includes(newTag)) {
+                pendingTag = newTag;
+                const tagNames = {
+                    'final': 'Final',
+                    'ready_for_review': 'Ready for Review',
+                    'working': 'Currently Working'
+                };
+                
+                document.getElementById('tagChangeMessage').textContent = 
+                    `Setting this version as "${tagNames[newTag]}" will remove this status from any other versions in this draft. Continue?`;
+                document.getElementById('tagChangeModal').style.display = 'block';
+            } else {
+                // Draft tag can be applied directly
+                setVersionTag(newTag);
+            }
+        });
+    });
+    
+    function setVersionTag(tag) {
+        fetch(`/drafts/versions/${currentVersionId}/set_tag`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag: tag })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to update version status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update version status');
+        });
+    }
+    
     // Event listeners
     document.getElementById('contentEditor').addEventListener('input', function() {
         clearTimeout(autoSaveTimeout);
@@ -344,11 +424,10 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     // Modal management
     const modal = document.getElementById('newVersionModal');
     const renameModal = document.getElementById('renameVersionModal');
-    const finalModal = document.getElementById('markFinalModal');
+    const tagModal = document.getElementById('tagChangeModal');
     const shareModal = document.getElementById('shareModal');
     const newVersionBtn = document.getElementById('newVersionBtn');
     const renameVersionBtn = document.getElementById('renameVersionBtn');
-    const markFinalBtn = document.getElementById('markFinalBtn');
     const shareBtn = document.getElementById('shareBtn');
     
     // New version modal
@@ -366,8 +445,8 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     
     // Rename version modal
     renameVersionBtn.addEventListener('click', () => {
-        const currentName = document.querySelector('#versionSelector option:checked').textContent.trim();
-        document.getElementById('renameVersionName').value = currentName.replace(' [FINAL]', '');
+        const currentName = '{{ current_version.version_name }}';
+        document.getElementById('renameVersionName').value = currentName;
         renameModal.style.display = 'block';
         document.getElementById('renameVersionName').focus();
     });
@@ -379,20 +458,20 @@ Ready to begin? Start typing and watch the preview update in real-time!"
         });
     });
     
-    // Mark as final modal
-    markFinalBtn.addEventListener('click', () => {
-        const currentName = document.querySelector('#versionSelector option:checked').textContent.trim();
-        const suggestedName = currentName.includes('Final') ? currentName : currentName + ' - Final';
-        document.getElementById('finalVersionName').value = suggestedName.replace(' [FINAL]', '');
-        finalModal.style.display = 'block';
-        document.getElementById('finalVersionName').focus();
+    // Tag change modal
+    [document.getElementById('closeTagModalBtn'), document.getElementById('cancelTagChangeBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            tagModal.style.display = 'none';
+            pendingTag = null;
+        });
     });
     
-    [document.getElementById('closeFinalModalBtn'), document.getElementById('cancelMarkFinalBtn')].forEach(btn => {
-        btn.addEventListener('click', () => {
-            finalModal.style.display = 'none';
-            document.getElementById('finalVersionName').value = '';
-        });
+    document.getElementById('confirmTagChangeBtn').addEventListener('click', () => {
+        if (pendingTag) {
+            setVersionTag(pendingTag);
+            tagModal.style.display = 'none';
+            pendingTag = null;
+        }
     });
     
     // Share modal
@@ -409,7 +488,7 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     });
     
     // Close modals on outside click
-    [modal, renameModal, finalModal, shareModal].forEach(m => {
+    [modal, renameModal, tagModal, shareModal].forEach(m => {
         m.addEventListener('click', (e) => {
             if (e.target === m) {
                 m.style.display = 'none';
@@ -462,33 +541,6 @@ Ready to begin? Start typing and watch the preview update in real-time!"
             } else {
                 alert('Failed to rename version');
             }
-        });
-    });
-    
-    // Mark as final
-    document.getElementById('confirmMarkFinalBtn').addEventListener('click', function() {
-        const finalName = document.getElementById('finalVersionName').value.trim();
-        if (!finalName) {
-            alert('Please enter a final version name');
-            return;
-        }
-        
-        fetch(`/drafts/versions/${currentVersionId}/mark_final`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: finalName })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Failed to mark as final: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to mark as final');
         });
     });
     
@@ -613,6 +665,7 @@ Ready to begin? Start typing and watch the preview update in real-time!"
             });
         }
     }
+    
     function handleColumnToggle(event) {
         const header = event.currentTarget;
         const content = header.nextElementSibling;
@@ -630,7 +683,6 @@ Ready to begin? Start typing and watch the preview update in real-time!"
     }
     
     // Initialize mobile collapse on load and resize
-    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         initMobileCollapse();
     });

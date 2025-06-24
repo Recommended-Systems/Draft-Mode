@@ -223,6 +223,16 @@
             line-height: 1.8;
         }
 
+        /* Remove all h1-h6 styling for version titles - let content's h1 be the main title */
+        .article-content h1:first-child,
+        .article-content h2:first-child,
+        .article-content h3:first-child,
+        .article-content h4:first-child,
+        .article-content h5:first-child,
+        .article-content h6:first-child {
+            margin-top: 0; /* Just ensure first heading doesn't have top margin */
+        }
+
         /* Article styling */
         .article-content h1,
         .article-content h2,
@@ -242,7 +252,6 @@
             font-size: 32px; 
             border-bottom: 3px solid var(--accent-green); 
             padding-bottom: 12px;
-            margin-top: 0;
         }
         .article-content h2 { font-size: 24px; }
         .article-content h3 { font-size: 20px; }
@@ -421,10 +430,10 @@
             <div class="header-info">
                 <h1 class="draft-title">{{ draft.title }}</h1>
                 <div class="draft-meta">
-                    <span>Version: {{ version.version_name }}</span>
+                    <span>{{ version.version_name }}</span>
                     <span>By {{ author.name }}</span>
                     <span>Updated {{ version.updated_at.strftime('%B %d, %Y') }}</span>
-                    {% if 'final' in version.version_name.lower() or 'published' in version.version_name.lower() %}
+                    {% if version.tag == 'final' %}
                         <span class="version-badge">Final Version</span>
                     {% endif %}
                 </div>
@@ -478,7 +487,7 @@
         // Fun window control interactions (disabled for public view)
         document.querySelector('.window-control.close')?.addEventListener('click', () => {
             if (confirm('Close this article? You\'ll be redirected to Draft Mode.')) {
-                window.location.href = '{{ url_for("index") }}';
+                window.location.href = '{{ url_for("main.index") }}';
             }
         });
 

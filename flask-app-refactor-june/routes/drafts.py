@@ -35,7 +35,8 @@ def create_draft():
                 version_name='v1.0',
                 content=f'# {title}\n\nStart writing your blog post here...',
                 blog_draft_id=draft.id,
-                is_current=True
+                is_current=True,
+                tag='draft'
             )
             db.session.add(version)
             db.session.commit()
@@ -108,7 +109,8 @@ def create_version(draft_id):
             version_name=version_name,
             content=content,
             blog_draft_id=draft.id,
-            is_current=True
+            is_current=True,
+            tag='draft'
         )
         db.session.add(version)
         db.session.commit()
@@ -250,10 +252,32 @@ def rename_version(version_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': 'Failed to rename version'})
 
+@drafts_bp.route('/versions/<int:version_id>/set_tag', methods=['POST'])
+@login_required
+def set_version_tag(version_id):
+    """Set tag for a version"""
+    user = get_current_user()
+    version = DraftVersion.query.join(BlogDraft).filter(
+        DraftVersion.id == version_id,
+        BlogDraft.user_id == user.id
+    ).first_or_404()
+    
+    new_tag = request.json.get('tag', '').strip()
+    if new_tag not in ['draft', 'final', 'ready_for_review', 'working']:
+        return jsonify({'success': False, 'error': 'Invalid tag'})
+    
+    try:
+        version.set_tag(new_tag)
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Failed to set tag'})
+
 @drafts_bp.route('/versions/<int:version_id>/mark_final', methods=['POST'])
 @login_required
 def mark_final(version_id):
-    """Mark a version as final/published"""
+    """Mark a version as final/published - kept for backwards compatibility"""
     user = get_current_user()
     version = DraftVersion.query.join(BlogDraft).filter(
         DraftVersion.id == version_id,
@@ -265,8 +289,9 @@ def mark_final(version_id):
         return jsonify({'success': False, 'error': 'Final name cannot be empty'})
     
     try:
-        # Update version name to indicate it's final
+        # Update version name and set as final
         version.version_name = final_name
+        version.set_tag('final')
         
         # Generate a share token if it doesn't exist
         version.generate_share_token()
@@ -355,7 +380,8 @@ def duplicate_version(version_id):
             version_name=new_name,
             content=original_version.content,
             blog_draft_id=original_version.blog_draft_id,
-            is_current=True
+            is_current=True,
+            tag='draft'  # Reset to draft for duplicates
         )
         
         db.session.add(duplicate)

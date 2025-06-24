@@ -60,13 +60,23 @@
                     {{ draft.title }}
                     {% if draft.versions %}
                         {% set has_final = false %}
+                        {% set has_review = false %}
+                        {% set has_working = false %}
                         {% for version in draft.versions %}
-                            {% if 'final' in version.version_name.lower() or 'published' in version.version_name.lower() %}
+                            {% if version.tag == 'final' %}
                                 {% set has_final = true %}
+                            {% elif version.tag == 'ready_for_review' %}
+                                {% set has_review = true %}
+                            {% elif version.tag == 'working' %}
+                                {% set has_working = true %}
                             {% endif %}
                         {% endfor %}
                         {% if has_final %}
                             <span class="draft-status final">Final</span>
+                        {% elif has_review %}
+                            <span class="draft-status active" style="background: var(--accent-blue); box-shadow: 0 0 4px var(--accent-blue);">Review</span>
+                        {% elif has_working %}
+                            <span class="draft-status active" style="background: var(--accent-purple); box-shadow: 0 0 4px var(--accent-purple);">Working</span>
                         {% else %}
                             <span class="draft-status active">Active</span>
                         {% endif %}
@@ -98,7 +108,19 @@
                         <option value="">Select version...</option>
                         {% for version in draft.versions %}
                             <option value="{{ version.id }}" {% if version.is_current %}selected{% endif %}>
-                                {{ version.version_name }}
+                                {% if version.tag and version.tag != 'draft' %}
+                                    {% if version.tag == 'final' %}
+                                        {{ version.version_name }} [FINAL]
+                                    {% elif version.tag == 'ready_for_review' %}
+                                        {{ version.version_name }} [REVIEW]
+                                    {% elif version.tag == 'working' %}
+                                        {{ version.version_name }} [WORKING]
+                                    {% else %}
+                                        {{ version.version_name }}
+                                    {% endif %}
+                                {% else %}
+                                    {{ version.version_name }}
+                                {% endif %}
                             </option>
                         {% endfor %}
                     </select>
@@ -169,7 +191,7 @@
         const newName = document.getElementById('newDraftName').value.trim();
         if (!newName || !currentDraftId) return;
 
-        fetch(`/rename_draft/${currentDraftId}`, {
+        fetch(`/drafts/${currentDraftId}/rename`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName })
