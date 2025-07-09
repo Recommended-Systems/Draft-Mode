@@ -1,0 +1,699 @@
+{% extends "base.html" %}
+
+{% block window_title %}{{ draft.title }} - Draft Mode{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/editor.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}" style="font-size: 10px;">Dashboard</a>
+    <span class="breadcrumb-separator" style="font-size: 10px;">►</span>
+    <span style="color: var(--accent-green); font-size: 10px;">{{ draft.title }}</span>
+    <span class="breadcrumb-separator" style="font-size: 10px;">►</span>
+    <span style="color: var(--text-secondary); font-size: 10px;">Editor</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="editor-toolbar">
+    <!-- Column 1: Editor -->
+    <div class="toolbar-column">
+        <div class="column-header">Editor</div>
+        <div class="column-content">
+            <div class="current-version-info">
+                <div class="version-label">Current Version:</div>
+                <select id="versionSelector" class="version-selector" onchange="switchVersion(this.value)">
+                    {% for version in versions %}
+                        <option value="{{ version.id }}" {% if version.id == current_version.id %}selected{% endif %}>
+                            {% if version.tag and version.tag != 'draft' %}
+                                {% if version.tag == 'final' %}
+                                    {{ version.version_name }} [FINAL]
+                                {% elif version.tag == 'ready_for_review' %}
+                                    {{ version.version_name }} [REVIEW]
+                                {% elif version.tag == 'working' %}
+                                    {{ version.version_name }} [WORKING]
+                                {% else %}
+                                    {{ version.version_name }}
+                                {% endif %}
+                            {% else %}
+                                {{ version.version_name }}
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                
+                <div class="version-info-section">
+                    <div class="version-tags-row">
+                        {% if current_version.tag == 'final' %}
+                            <span class="version-badge final">Final</span>
+                        {% elif current_version.tag == 'ready_for_review' %}
+                            <span class="version-badge review">Review</span>
+                        {% elif current_version.tag == 'working' %}
+                            <span class="version-badge working">Working</span>
+                        {% else %}
+                            <span class="version-badge draft">Draft</span>
+                        {% endif %}
+                        
+                        <button id="renameVersionBtn" class="tag-btn">Rename</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="saveBtn" class="column-btn primary">Save Version</button>
+            
+            <div class="save-status">
+                <div class="save-indicator" id="saveIndicator"></div>
+                <span id="saveStatus">Ready</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Column 2: Versions -->
+    <div class="toolbar-column">
+        <div class="column-header">Versions</div>
+        <div class="column-content">
+            <div class="version-label">Set Version Status:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;">
+                <button class="tag-btn {% if current_version.tag == 'draft' or not current_version.tag %}active{% endif %}" data-tag="draft">Draft</button>
+                <button class="tag-btn working {% if current_version.tag == 'working' %}active{% endif %}" data-tag="working">Working</button>
+                <button class="tag-btn review {% if current_version.tag == 'ready_for_review' %}active{% endif %}" data-tag="ready_for_review">Review</button>
+                <button class="tag-btn final {% if current_version.tag == 'final' %}active{% endif %}" data-tag="final">Final</button>
+            </div>
+            
+            <div class="compare-section">
+                <div class="compare-label">Compare Against:</div>
+                <select id="compareVersion" class="version-selector">
+                    <option value="">Select version...</option>
+                    {% for version in versions %}
+                        {% if version.id != current_version.id %}
+                        <option value="{{ version.id }}">
+                            {% if version.tag and version.tag != 'draft' %}
+                                {% if version.tag == 'final' %}
+                                    {{ version.version_name }} [FINAL]
+                                {% elif version.tag == 'ready_for_review' %}
+                                    {{ version.version_name }} [REVIEW]
+                                {% elif version.tag == 'working' %}
+                                    {{ version.version_name }} [WORKING]
+                                {% else %}
+                                    {{ version.version_name }}
+                                {% endif %}
+                            {% else %}
+                                {{ version.version_name }}
+                            {% endif %}
+                        </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="column-buttons">
+                <button id="newVersionBtn" class="column-btn">New Version</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Column 3: Share -->
+    <div class="toolbar-column">
+        <div class="column-header">Share</div>
+        <div class="column-content">
+            <div class="column-buttons">
+                <button id="shareBtn" class="column-btn">Share Version</button>
+                <button id="exportBtn" class="column-btn">Export .MD</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="editor-container">
+    <div class="editor-panel">
+        <div class="panel-header">
+            <span>{{ current_version.version_name }}</span>
+            <span class="panel-badge">Editor</span>
+        </div>
+        <div class="editor-content">
+            <textarea 
+                id="contentEditor" 
+                class="editor-textarea" 
+                placeholder="# Start writing your blog post in Markdown...
+
+## Use headers, **bold text**, and *italics*
+
+```javascript
+// Code blocks are supported too!
+console.log('Hello, Draft Mode!');
+```
+
+> Blockquotes for emphasis
+
+- Bullet points
+- And numbered lists work great
+
+Ready to begin? Start typing and watch the preview update in real-time!"
+            >{{ current_version.content }}</textarea>
+        </div>
+    </div>
+    
+    <div class="editor-panel">
+        <div class="panel-header">
+            <span>Live Preview</span>
+            <span class="panel-badge preview">Preview</span>
+        </div>
+        <div id="previewContent" class="preview-content">
+            <!-- Preview content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<div class="action-bar">
+    <div class="draft-info">
+        Draft: {{ draft.title }} • Created {{ draft.created_at.strftime('%m/%d/%Y') }} • {{ draft.versions|length }} version(s)
+    </div>
+    <div class="action-buttons">
+        <button id="fullscreenBtn" class="btn">Fullscreen</button>
+        <a href="{{ url_for('main.dashboard') }}" class="btn">← Dashboard</a>
+    </div>
+</div>
+
+<!-- New Version Modal -->
+<div id="newVersionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Create New Version</h3>
+            <button class="modal-close" id="closeModalBtn">✕</button>
+        </div>
+        <div class="form-group">
+            <label for="newVersionName">Version Name</label>
+            <input type="text" id="newVersionName" placeholder="e.g. v2.0, Draft 2, Final Edit">
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="createVersionBtn" class="btn primary">Create Version</button>
+            <button id="cancelVersionBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Rename Version Modal -->
+<div id="renameVersionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Rename Version</h3>
+            <button class="modal-close" id="closeRenameModalBtn">✕</button>
+        </div>
+        <div class="form-group">
+            <label for="renameVersionName">Version Name</label>
+            <input type="text" id="renameVersionName" placeholder="Enter new version name">
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="confirmRenameVersionBtn" class="btn primary">Rename</button>
+            <button id="cancelRenameVersionBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tag Change Confirmation Modal -->
+<div id="tagChangeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Change Version Status</h3>
+            <button class="modal-close" id="closeTagModalBtn">✕</button>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;" id="tagChangeMessage">
+                <!-- Dynamic message will be inserted here -->
+            </p>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="confirmTagChangeBtn" class="btn warning">Change Status</button>
+            <button id="cancelTagChangeBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Share Version</h3>
+            <button class="modal-close" id="closeShareModalBtn">✕</button>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 12px;">
+                Generate a public link to share this version with others. Anyone with the link can view it without logging in.
+            </p>
+            <div id="shareLinkContainer" style="display: none;">
+                <label>Share Link:</label>
+                <div class="share-link-display" id="shareLink"></div>
+                <button id="copyLinkBtn" class="btn" style="margin-top: 8px;">Copy Link</button>
+            </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <button id="generateShareLinkBtn" class="btn primary">Generate Share Link</button>
+            <button id="cancelShareBtn" class="btn">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentVersionId = {{ current_version.id }};
+    let draftId = {{ draft.id }};
+    let autoSaveTimeout;
+    let lastSavedContent = document.getElementById('contentEditor').value;
+    let pendingTag = null;
+    
+    // Version switching
+    function switchVersion(versionId) {
+        if (versionId && versionId != currentVersionId) {
+            // Save current content before switching
+            const content = document.getElementById('contentEditor').value;
+            if (content !== lastSavedContent) {
+                if (confirm('You have unsaved changes. Save before switching versions?')) {
+                    fetch(`/drafts/versions/${currentVersionId}/save`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: content })
+                    }).then(() => {
+                        window.location.href = `/drafts/${draftId}?version=${versionId}`;
+                    });
+                    return;
+                }
+            }
+            window.location.href = `/drafts/${draftId}?version=${versionId}`;
+        }
+    }
+    
+    // Save status management
+    function updateSaveStatus(status, type = 'ready') {
+        const indicator = document.getElementById('saveIndicator');
+        const statusText = document.getElementById('saveStatus');
+        
+        indicator.className = 'save-indicator';
+        if (type === 'saving') indicator.classList.add('saving');
+        if (type === 'error') indicator.classList.add('error');
+        
+        const now = new Date();
+        statusText.textContent = `${status} ${now.toLocaleTimeString()}`;
+    }
+    
+    // Auto-save functionality
+    function autoSave() {
+        const content = document.getElementById('contentEditor').value;
+        if (content !== lastSavedContent) {
+            updateSaveStatus('Saving...', 'saving');
+            
+            fetch(`/drafts/versions/${currentVersionId}/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    lastSavedContent = content;
+                    updateSaveStatus('Auto-saved', 'ready');
+                } else {
+                    updateSaveStatus('Save failed', 'error');
+                }
+            })
+            .catch(() => {
+                updateSaveStatus('Save failed', 'error');
+            });
+        }
+    }
+    
+    // Preview update
+    function updatePreview() {
+        const content = document.getElementById('contentEditor').value;
+        const previewContent = document.getElementById('previewContent');
+        
+        previewContent.classList.add('loading');
+        
+        fetch(`/drafts/versions/${currentVersionId}/preview`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        })
+        .then(response => response.json())
+        .then(data => {
+            previewContent.innerHTML = data.html;
+            previewContent.classList.remove('loading');
+        })
+        .catch(() => {
+            previewContent.innerHTML = '<p style="color: var(--accent-red);">Preview unavailable</p>';
+            previewContent.classList.remove('loading');
+        });
+    }
+    
+    // Tag management
+    document.querySelectorAll('.tag-btn[data-tag]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const newTag = this.dataset.tag;
+            const currentTag = '{{ current_version.tag }}';
+            
+            if (newTag === currentTag) return; // No change needed
+            
+            // Check if this tag needs confirmation (for unique tags)
+            if (['final', 'ready_for_review', 'working'].includes(newTag)) {
+                pendingTag = newTag;
+                const tagNames = {
+                    'final': 'Final',
+                    'ready_for_review': 'Ready for Review',
+                    'working': 'Currently Working'
+                };
+                
+                document.getElementById('tagChangeMessage').textContent = 
+                    `Setting this version as "${tagNames[newTag]}" will remove this status from any other versions in this draft. Continue?`;
+                document.getElementById('tagChangeModal').style.display = 'block';
+            } else {
+                // Draft tag can be applied directly
+                setVersionTag(newTag);
+            }
+        });
+    });
+    
+    function setVersionTag(tag) {
+        fetch(`/drafts/versions/${currentVersionId}/set_tag`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag: tag })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to update version status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update version status');
+        });
+    }
+    
+    // Event listeners
+    document.getElementById('contentEditor').addEventListener('input', function() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(autoSave, 2000);
+        updatePreview();
+    });
+    
+    document.getElementById('saveBtn').addEventListener('click', function() {
+        const content = document.getElementById('contentEditor').value;
+        updateSaveStatus('Saving...', 'saving');
+        
+        fetch(`/drafts/versions/${currentVersionId}/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                lastSavedContent = content;
+                updateSaveStatus('Saved', 'ready');
+            } else {
+                updateSaveStatus('Save failed', 'error');
+            }
+        });
+    });
+    
+    // Modal management
+    const modal = document.getElementById('newVersionModal');
+    const renameModal = document.getElementById('renameVersionModal');
+    const tagModal = document.getElementById('tagChangeModal');
+    const shareModal = document.getElementById('shareModal');
+    const newVersionBtn = document.getElementById('newVersionBtn');
+    const renameVersionBtn = document.getElementById('renameVersionBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    
+    // New version modal
+    newVersionBtn.addEventListener('click', () => {
+        modal.style.display = 'block';
+        document.getElementById('newVersionName').focus();
+    });
+    
+    [document.getElementById('closeModalBtn'), document.getElementById('cancelVersionBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.getElementById('newVersionName').value = '';
+        });
+    });
+    
+    // Rename version modal
+    renameVersionBtn.addEventListener('click', () => {
+        const currentName = '{{ current_version.version_name }}';
+        document.getElementById('renameVersionName').value = currentName;
+        renameModal.style.display = 'block';
+        document.getElementById('renameVersionName').focus();
+    });
+    
+    [document.getElementById('closeRenameModalBtn'), document.getElementById('cancelRenameVersionBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            renameModal.style.display = 'none';
+            document.getElementById('renameVersionName').value = '';
+        });
+    });
+    
+    // Tag change modal
+    [document.getElementById('closeTagModalBtn'), document.getElementById('cancelTagChangeBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            tagModal.style.display = 'none';
+            pendingTag = null;
+        });
+    });
+    
+    document.getElementById('confirmTagChangeBtn').addEventListener('click', () => {
+        if (pendingTag) {
+            setVersionTag(pendingTag);
+            tagModal.style.display = 'none';
+            pendingTag = null;
+        }
+    });
+    
+    // Share modal
+    shareBtn.addEventListener('click', () => {
+        shareModal.style.display = 'block';
+        document.getElementById('shareLinkContainer').style.display = 'none';
+    });
+    
+    [document.getElementById('closeShareModalBtn'), document.getElementById('cancelShareBtn')].forEach(btn => {
+        btn.addEventListener('click', () => {
+            shareModal.style.display = 'none';
+            document.getElementById('shareLinkContainer').style.display = 'none';
+        });
+    });
+    
+    // Close modals on outside click
+    [modal, renameModal, tagModal, shareModal].forEach(m => {
+        m.addEventListener('click', (e) => {
+            if (e.target === m) {
+                m.style.display = 'none';
+            }
+        });
+    });
+    
+    // Create version
+    document.getElementById('createVersionBtn').addEventListener('click', function() {
+        const versionName = document.getElementById('newVersionName').value.trim();
+        if (!versionName) {
+            alert('Please enter a version name');
+            return;
+        }
+        
+        const content = document.getElementById('contentEditor').value;
+        const formData = new FormData();
+        formData.append('version_name', versionName);
+        formData.append('content', content);
+        
+        fetch(`/drafts/${draftId}/versions`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    });
+    
+    // Rename version
+    document.getElementById('confirmRenameVersionBtn').addEventListener('click', function() {
+        const newName = document.getElementById('renameVersionName').value.trim();
+        if (!newName) {
+            alert('Please enter a version name');
+            return;
+        }
+        
+        fetch(`/drafts/versions/${currentVersionId}/rename`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to rename version');
+            }
+        });
+    });
+    
+    // Generate share link
+    document.getElementById('generateShareLinkBtn').addEventListener('click', function() {
+        fetch(`/drafts/versions/${currentVersionId}/share`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('shareLink').textContent = data.share_url;
+                document.getElementById('shareLinkContainer').style.display = 'block';
+            } else {
+                alert('Failed to generate share link');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to generate share link');
+        });
+    });
+    
+    // Copy link
+    document.getElementById('copyLinkBtn').addEventListener('click', function() {
+        const shareLink = document.getElementById('shareLink').textContent;
+        navigator.clipboard.writeText(shareLink).then(() => {
+            this.textContent = 'Copied!';
+            setTimeout(() => {
+                this.textContent = 'Copy Link';
+            }, 2000);
+        }).catch(() => {
+            alert('Failed to copy link to clipboard');
+        });
+    });
+    
+    // Compare versions
+    document.getElementById('compareVersion').addEventListener('change', function() {
+        const compareVersionId = this.value;
+        if (compareVersionId) {
+            window.open(`/drafts/compare/${currentVersionId}/${compareVersionId}`, '_blank');
+        }
+    });
+    
+    // Export functionality
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        const content = document.getElementById('contentEditor').value;
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `{{ draft.title }}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+    
+    // Fullscreen toggle
+    document.getElementById('fullscreenBtn').addEventListener('click', function() {
+        const container = document.querySelector('.editor-container');
+        if (!document.fullscreenElement) {
+            container.requestFullscreen();
+            this.textContent = 'Exit Fullscreen';
+        } else {
+            document.exitFullscreen();
+            this.textContent = 'Fullscreen';
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 's':
+                    e.preventDefault();
+                    document.getElementById('saveBtn').click();
+                    break;
+                case 'n':
+                    e.preventDefault();
+                    document.getElementById('newVersionBtn').click();
+                    break;
+            }
+        }
+    });
+    
+    // Initial preview load
+    updatePreview();
+    updateSaveStatus('Ready', 'ready');
+    
+    // Mobile collapsible columns
+    function initMobileCollapse() {
+        // Only apply on mobile screens
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.column-header').forEach(header => {
+                const content = header.nextElementSibling;
+                
+                // Start collapsed by default on mobile
+                if (!header.classList.contains('expanded')) {
+                    content.classList.remove('expanded');
+                    header.classList.remove('expanded');
+                }
+                
+                // Remove existing event listeners
+                header.removeEventListener('click', handleColumnToggle);
+                
+                // Add click event listener
+                header.addEventListener('click', handleColumnToggle);
+            });
+        } else {
+            // On desktop, ensure all columns are expanded and remove mobile classes
+            document.querySelectorAll('.column-header').forEach(header => {
+                const content = header.nextElementSibling;
+                header.classList.remove('expanded');
+                content.classList.remove('expanded');
+                content.style.maxHeight = '';
+                content.style.opacity = '';
+                content.style.marginTop = '';
+                
+                // Remove click event listeners on desktop
+                header.removeEventListener('click', handleColumnToggle);
+                header.style.cursor = '';
+            });
+        }
+    }
+    
+    function handleColumnToggle(event) {
+        const header = event.currentTarget;
+        const content = header.nextElementSibling;
+        const isExpanded = header.classList.contains('expanded');
+        
+        if (isExpanded) {
+            // Collapse
+            content.classList.remove('expanded');
+            header.classList.remove('expanded');
+        } else {
+            // Expand
+            content.classList.add('expanded');
+            header.classList.add('expanded');
+        }
+    }
+    
+    // Initialize mobile collapse on load and resize
+    document.addEventListener('DOMContentLoaded', function() {
+        initMobileCollapse();
+    });
+
+    // Re-initialize on window resize with debouncing
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            initMobileCollapse();
+        }, 250);
+    });
+</script>
+{% endblock %}

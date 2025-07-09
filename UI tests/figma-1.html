@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draft Mode</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inconsolata&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #FAFCFE;
+      color: #333;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      font-size: 14px;
+      background-color: white;
+      position: relative;
+    }
+    header::after {
+      content: "";
+      position: absolute;
+      left: 130px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background-color: #E1E4E7;
+    }
+    nav {
+      display: flex;
+      gap: 1.5rem;
+      margin-left: auto;
+    }
+    nav a {
+      text-decoration: none;
+      color: #666;
+    }
+    .container {
+      display: flex;
+      height: calc(100vh - 64px);
+    }
+    aside {
+      width: 14%;
+      padding: 1.5rem;
+      font-size: 14px;
+    }
+    aside h2 {
+      font-size: 16px;
+      margin-top: 1.5rem;
+    }
+    aside ul {
+      list-style: none;
+      padding-left: 1rem;
+      margin: 0;
+    }
+    aside li {
+      margin: 0.5rem 0;
+    }
+    aside li.active {
+      font-weight: 600;
+      font-style: italic;
+    }
+    .main-editor {
+      flex: 4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+    .editor-container {
+      background: #ffffff;
+      border: 1px solid #E1E4E7;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 720px;
+      height: 600px;
+      padding: 1rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    textarea {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      resize: none;
+      font-family: 'Inconsolata', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+    }
+    .right-sidebar {
+      width: 14%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 1.5rem 1rem;
+    }
+    .right-sidebar button {
+      padding: 10px 16px;
+      background-color: white;
+      border: 1px solid #E1E4E7;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+    }
+    .word-count {
+      position: absolute;
+      top: 8px;
+      right: 16px;
+      font-size: 12px;
+      color: #999;
+    }
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      padding: 1rem;
+    }
+    button.new-project {
+      background: none;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Draft Mode</strong>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">New Project</a>
+      <a href="#">Settings</a>
+      <a href="#">Logout</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <aside>
+      <button class="new-project">📄 New Project</button>
+      <h2>Project Name</h2>
+      <ul>
+        <li class="active">V2 <em>[LIVE]</em></li>
+        <li>V1</li>
+        <li>V0</li>
+        <li>🧪 Research</li>
+      </ul>
+      <ul>
+        <li>Second Draft</li>
+        <li>Third Draft</li>
+      </ul>
+    </aside>
+
+    <div class="main-editor">
+      <div class="editor-container">
+        <div class="word-count">1,200 Words</div>
+        <textarea>
+## Verison 2
+# Trying a new draft
+
+Start writing your blog post here...
+
+asdfg
+
+adsfggh
+        </textarea>
+      </div>
+    </div>
+
+    <div class="right-sidebar">
+      <button>Versions</button>
+      <button>Preview</button>
+      <button>Compare</button>
+      <button>Assist ✨</button>
+      <button>Share</button>
+      <button>Metadata</button>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 Draft Mode • Made with ❤️ by <a href="#">Recommended Systems</a>
+  </footer>
+</body>
+</html>

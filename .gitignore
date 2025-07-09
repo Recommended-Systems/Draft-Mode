@@ -4,3 +4,4 @@ flask-app/instance/draft_mode.db
 /flask-app-refactor-june/__pycache__
 /flask-app-refactor-june/routes/__pycache__
 /flask-app-refactor-june/utils/__pycache__
+flask-app-refactor-june/instance/draft_mode_dev.db

@@ -1,10 +1,10 @@
-# Versory Product Roadmap
+# Draft Mode Product Roadmap
 
 *Version 1.0 - Last Updated: June 2025*
 
 ## Executive Summary
 
-This roadmap outlines the strategic development path for Versory, transforming it from a functional version control tool for writers into the definitive platform for professional content creation and collaboration.
+This roadmap outlines the strategic development path for Draft Mode, transforming it from a functional version control tool for writers into the definitive platform for professional content creation and collaboration.
 
 ---
 
