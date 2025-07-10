@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/editor.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/text-selection-toolbar.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 {% endblock %}
 
@@ -76,6 +77,8 @@ Use Markdown formatting:
 - Lists and headers
 - > Blockquotes
 
+💡 Tip: Select any text to see the formatting toolbar!
+
 Start typing to see your content come to life..."
             >{{ current_version.content }}</textarea>
         </div>
@@ -127,6 +130,20 @@ Start typing to see your content come to life..."
                 <button class="tag-btn {% if current_version.tag == 'working' %}active{% endif %}" data-tag="working">Working</button>
                 <button class="tag-btn {% if current_version.tag == 'ready_for_review' %}active{% endif %}" data-tag="ready_for_review">Review</button>
                 <button class="tag-btn {% if current_version.tag == 'final' %}active{% endif %}" data-tag="final">Final</button>
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-title">Formatting Help</div>
+            <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+                <div style="margin-bottom: 8px;">
+                    <strong>Quick Tips:</strong>
+                </div>
+                <div style="margin-bottom: 4px;">• Select text for formatting toolbar</div>
+                <div style="margin-bottom: 4px;">• Ctrl+B for bold, Ctrl+I for italic</div>
+                <div style="margin-bottom: 4px;">• Use # for headings</div>
+                <div style="margin-bottom: 4px;">• ``` for code blocks</div>
+                <div>• > for blockquotes</div>
             </div>
         </div>
     </div>
@@ -270,5 +287,6 @@ Start typing to see your content come to life..."
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/text-selection-toolbar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
 {% endblock %}

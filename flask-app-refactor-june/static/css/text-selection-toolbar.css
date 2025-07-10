@@ -1,0 +1,441 @@
+/* Text Selection Toolbar Styles for Draft Mode */
+
+.text-selection-toolbar {
+    position: absolute;
+    z-index: 10000;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-primary);
+    border-radius: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    user-select: none;
+    backdrop-filter: blur(10px);
+    animation: toolbarFadeIn 0.2s ease-out;
+    max-width: 90vw;
+    overflow-x: auto;
+}
+
+[data-theme="dark"] .text-selection-toolbar {
+    box-shadow: 0 4px 12px rgba(0, 255, 65, 0.2), 
+               inset 0 1px 0 var(--border-secondary);
+}
+
+[data-theme="light"] .text-selection-toolbar {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+               inset 0 1px 0 var(--border-secondary);
+}
+
+@keyframes toolbarFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.toolbar-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.toolbar-btn:hover {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+    border-color: var(--accent-green);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 255, 65, 0.3);
+}
+
+[data-theme="light"] .toolbar-btn:hover {
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.toolbar-btn:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.toolbar-btn:hover::before {
+    left: 100%;
+}
+
+.toolbar-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border-primary);
+    margin: 0 4px;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+/* Special button styles */
+.toolbar-btn[title*="Heading"] {
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+}
+
+.toolbar-btn[title*="Bold"] {
+    font-weight: 900;
+}
+
+.toolbar-btn[title*="Italic"] {
+    font-style: italic;
+    font-weight: 700;
+}
+
+.toolbar-btn[title*="Code"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+}
+
+.toolbar-btn[title*="Link"] {
+    font-size: 14px;
+}
+
+.toolbar-btn[title*="Quote"] {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.toolbar-btn[title*="Bullet"] {
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.toolbar-btn[title*="Numbered"] {
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* Accessibility improvements */
+.toolbar-btn:focus {
+    outline: 2px solid var(--accent-green);
+    outline-offset: 2px;
+    z-index: 1;
+}
+
+.toolbar-btn:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Loading state for async operations */
+.toolbar-btn.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.toolbar-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error state */
+.toolbar-btn.error {
+    background: var(--accent-red);
+    color: var(--text-primary);
+    border-color: var(--accent-red);
+}
+
+[data-theme="light"] .toolbar-btn.error {
+    color: #ffffff;
+}
+
+/* Success state */
+.toolbar-btn.success {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+    border-color: var(--accent-green);
+}
+
+[data-theme="light"] .toolbar-btn.success {
+    color: #ffffff;
+}
+
+/* Disabled state */
+.toolbar-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .text-selection-toolbar {
+        flex-wrap: wrap;
+        max-width: 280px;
+        padding: 6px;
+        gap: 3px;
+    }
+    
+    .toolbar-btn {
+        min-width: 36px;
+        height: 36px;
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    
+    .toolbar-separator {
+        display: none;
+    }
+    
+    /* Larger touch targets for mobile */
+    .toolbar-btn[title*="Bold"],
+    .toolbar-btn[title*="Italic"],
+    .toolbar-btn[title*="Code"] {
+        min-width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .text-selection-toolbar {
+        max-width: 250px;
+        padding: 4px;
+        gap: 2px;
+    }
+    
+    .toolbar-btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+    
+    /* Hide less critical buttons on very small screens */
+    .toolbar-btn[title*="Heading 3"],
+    .toolbar-btn[title*="Code Block"] {
+        display: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .text-selection-toolbar {
+        border-width: 3px;
+    }
+    
+    .toolbar-btn {
+        border-width: 2px;
+        font-weight: 700;
+    }
+    
+    .toolbar-btn:hover {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .text-selection-toolbar,
+    .toolbar-btn,
+    .toolbar-btn::before {
+        animation: none;
+        transition: none;
+    }
+    
+    .toolbar-btn:hover {
+        transform: none;
+    }
+}
+
+/* Dark theme specific enhancements */
+[data-theme="dark"] .text-selection-toolbar {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.1),
+                0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .toolbar-btn {
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .toolbar-btn:hover {
+    box-shadow: 0 2px 4px rgba(0, 255, 65, 0.3),
+                0 0 8px rgba(0, 255, 65, 0.2);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Light theme specific enhancements */
+[data-theme="light"] .text-selection-toolbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="light"] .toolbar-btn {
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, #ffffff 100%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .toolbar-btn:hover {
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3),
+                0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Tooltip enhancements */
+.toolbar-btn {
+    position: relative;
+}
+
+.toolbar-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    padding: 4px 8px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 10001;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-btn:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+/* Prevent tooltips on mobile */
+@media (max-width: 768px) {
+    .toolbar-btn::after {
+        display: none;
+    }
+}
+
+/* Animation for toolbar appearance */
+.text-selection-toolbar.entering {
+    animation: toolbarSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.text-selection-toolbar.leaving {
+    animation: toolbarSlideOut 0.2s cubic-bezier(0.4, 0, 1, 0.5);
+}
+
+@keyframes toolbarSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes toolbarSlideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+}
+
+/* Focus indicators for keyboard navigation */
+.text-selection-toolbar:focus-within {
+    box-shadow: 0 0 0 2px var(--accent-green),
+                0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Button group styling for logical groupings */
+.toolbar-btn + .toolbar-btn {
+    margin-left: -1px;
+}
+
+.toolbar-btn:first-of-type {
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+
+.toolbar-btn:last-of-type {
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
+}
+
+/* Special styling for active/pressed state */
+.toolbar-btn.active {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+    border-color: var(--accent-green);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .toolbar-btn.active {
+    color: #ffffff;
+}
+
+/* Scrollbar styling for mobile overflow */
+.text-selection-toolbar::-webkit-scrollbar {
+    height: 4px;
+}
+
+.text-selection-toolbar::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+.text-selection-toolbar::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 2px;
+}
+
+.text-selection-toolbar::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-green);
+}
