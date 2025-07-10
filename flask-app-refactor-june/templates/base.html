@@ -42,6 +42,8 @@
 
     <!-- Main Content -->
     <div class="main-container">
+        {% if request.endpoint != 'drafts.edit_draft' %}
+        <!-- Standard pages get the window wrapper -->
         <div class="window">
             <div class="title-bar">
                 <div class="window-controls">
@@ -55,29 +57,19 @@
             <div class="content">
                 {% block breadcrumb %}{% endblock %}
                 
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        <div class="flash-messages">
-                            {% for message in messages %}
-                                <div class="flash error">{{ message }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
-                
-                {% with messages = get_flashed_messages(category_filter=['success']) %}
-                    {% if messages %}
-                        <div class="flash-messages">
-                            {% for message in messages %}
-                                <div class="flash success">{{ message }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
+                {% include 'partials/flash_messages.html' %}
                 
                 {% block content %}{% endblock %}
             </div>
         </div>
+        {% else %}
+        <!-- Editor pages get full layout without window wrapper -->
+        {% block breadcrumb_editor %}{% endblock %}
+        
+        {% include 'partials/flash_messages.html' %}
+        
+        {% block editor_content %}{% endblock %}
+        {% endif %}
     </div>
 
     <!-- Footer -->
@@ -89,7 +81,6 @@
     </footer>
 
     <script>
-
         // Theme management
         function updateTheme() {
             const theme = document.documentElement.getAttribute('data-theme') || 'light';
@@ -134,7 +125,8 @@
                 });
             }
 
-            // Window control interactions
+            // Window control interactions (only for non-editor pages)
+            {% if request.endpoint != 'drafts.edit_draft' %}
             document.querySelector('.window-control.close')?.addEventListener('click', () => {
                 alert('Nice try! 😄 This is just a demo interface.');
             });
@@ -179,9 +171,10 @@
                     window.style.zIndex = window.getAttribute('data-original-z-index');
                     window.style.margin = window.getAttribute('data-original-margin');
                     window.style.transition = 'all 0.3s ease';
-                    window.setAttribute('data-maximized', 'false');
+                    window.setAttribute('data-original-z-index', 'false');
                 }
             });
+            {% endif %}
         });
     </script>
     

@@ -42,6 +42,18 @@ class User(db.Model):
         """Get total number of versions across all drafts"""
         return sum(len(draft.versions) for draft in self.blog_drafts)
     
+    def to_dict(self):
+        """Convert user to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'total_drafts': self.total_drafts,
+            'total_versions': self.total_versions
+        }
+    
     def __repr__(self):
         return f'<User {self.email}>'
 
@@ -87,6 +99,20 @@ class BlogDraft(db.Model):
             return 'final'
         else:
             return 'active'
+    
+    def to_dict(self):
+        """Convert draft to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'user_id': self.user_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'status': self.status,
+            'has_final_version': self.has_final_version,
+            'version_count': len(self.versions) if self.versions else 0
+        }
     
     def __repr__(self):
         return f'<BlogDraft {self.title}>'
@@ -152,6 +178,24 @@ class DraftVersion(db.Model):
             DraftVersion.query.filter_by(blog_draft_id=self.blog_draft_id, tag=new_tag).update({'tag': 'draft'})
         self.tag = new_tag
         db.session.commit()
+    
+    def to_dict(self):
+        """Convert version to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'version_name': self.version_name,
+            'content': self.content,
+            'blog_draft_id': self.blog_draft_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'is_current': self.is_current,
+            'share_token': self.share_token,
+            'tag': self.tag,
+            'word_count': self.word_count,
+            'character_count': self.character_count,
+            'is_final': self.is_final,
+            'display_name': self.display_name
+        }
     
     def __repr__(self):
         return f'<DraftVersion {self.version_name} for {self.blog_draft.title}>'
