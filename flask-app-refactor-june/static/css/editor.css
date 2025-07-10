@@ -3,14 +3,14 @@
     display: flex;
     min-height: calc(100vh - 200px);
     background: var(--bg-primary);
-    border: 1px solid var(--border-primary);
+    /*border: 1px solid var(--border-primary);*/
 }
 
 /* Left Sidebar */
 .left-sidebar {
     width: 280px;
     background: #ffffff;
-    border-right: 1px solid var(--border-primary);
+    /*border-right: 1px solid var(--border-primary);*/
     display: flex;
     flex-direction: column;
     position: relative;
@@ -22,7 +22,7 @@
 
 .sidebar-header {
     padding: 16px;
-    border-bottom: 1px solid var(--border-primary);
+    /*border-bottom: 1px solid var(--border-primary);*/
     background: #ffffff;
 }
 
@@ -33,16 +33,16 @@
 .new-project-btn {
     width: 100%;
     padding: 12px 16px;
-    background: var(--accent-green);
-    border: 1px solid var(--accent-green);
-    color: #ffffff;
+    /*background: var(--accent-green);*/
+    /*border: 1px solid var(--accent-green);*/
+    color: #000000;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: left;
     gap: 8px;
     transition: all 0.2s ease;
     text-transform: uppercase;
@@ -51,8 +51,9 @@
 }
 
 .new-project-btn:hover {
-    background: #218838;
+    background: var(--accent-green);
     border-color: #1e7e34;
+    color:white;
 }
 
 /* Drafts Section */
@@ -117,9 +118,9 @@
 }
 
 .draft-link.active {
-    background: var(--accent-green);
-    color: #ffffff;
-    font-weight: 600;
+    /*background: var(--accent-green);*/
+    color: #000000;
+    font-weight: 900;
 }
 
 .version-list {
@@ -195,9 +196,12 @@
 }
 
 .version-link.active {
-    background: var(--accent-blue);
-    color: #ffffff;
-    font-weight: 600;
+    /*background: var(--accent-blue);*/
+    color:var(--accent-green);
+    font-weight: 900;
+}
+.version-link.active:before {
+    content: "► ";
 }
 
 /* Main Editor */
@@ -207,6 +211,8 @@
     flex-direction: column;
     position: relative;
     background: #FAFCFE;
+    border:1px solid var(--border-primary);
+    border:1px solid var(--border-primary);
     min-width: 0;
 }
 
@@ -262,7 +268,7 @@
 .editor-metadata {
     padding: 12px 20px;
     background: #FAFCFE;
-    border-bottom: 1px solid var(--border-primary);
+    /*border-bottom: 1px solid var(--border-primary);*/
     display: flex;
     gap: 24px;
     align-items: center;
@@ -405,7 +411,7 @@
 .right-sidebar {
     width: 200px;
     background: #ffffff;
-    border-left: 1px solid var(--border-primary);
+    /*border-left: 1px solid var(--border-primary);*/
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -430,13 +436,16 @@
 }
 
 .sidebar-button {
-    padding: 10px 14px;
-    background: var(--bg-tertiary);
+    padding: 8px 15px;
+    background: #FAFCFE;
+    /*background: var(--bg-tertiary);*/
     border: 1px solid var(--border-primary);
-    color: var(--text-primary);
+    border:1px solid #E1E4E7;
+    color: #C3C3C3;
+    /*color: var(--text-primary);*/
     font-size: 12px;
     font-weight: 500;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
     letter-spacing: 0.5px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -444,7 +453,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    border-radius: 4px;
+    border-radius: 25px;
 }
 
 .sidebar-button:hover {
@@ -462,6 +471,16 @@
 .sidebar-button.primary:hover {
     background: #218838;
     border-color: #1e7e34;
+}
+
+[data-theme="dark"] .sidebar-button {
+    background: #000000;
+}
+[data-theme="dark"] .sidebar-button:hover {
+    color: #000000;
+}
+[data-theme="dark"] .sidebar-button.primary {
+    color: #000000 !important;
 }
 
 /* Tag Buttons */

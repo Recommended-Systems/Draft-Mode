@@ -117,10 +117,15 @@
     opacity: 0.3;
 }
 
-.draft-card:hover {
+.draft-card:hover, .draft-card.active {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 255, 65, 0.2);
 }
+
+.draft-card.active {
+    border:1px solid var(--accent-green);
+}
+
 
 .draft-header {
     flex: 1;

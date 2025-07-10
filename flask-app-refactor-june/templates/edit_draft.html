@@ -8,15 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 {% endblock %}
 
-{% block breadcrumb_editor %}
-<div class="breadcrumb">
-    <a href="{{ url_for('main.dashboard') }}" style="font-size: 10px;">Dashboard</a>
-    <span class="breadcrumb-separator" style="font-size: 10px;">►</span>
-    <span style="color: var(--accent-green); font-size: 10px;">{{ draft.title }}</span>
-    <span class="breadcrumb-separator" style="font-size: 10px;">►</span>
-    <span style="color: var(--text-secondary); font-size: 10px;">Editor</span>
-</div>
-{% endblock %}
 
 {% block editor_content %}
 <div class="editor-layout">
@@ -24,12 +15,12 @@
     <div class="left-sidebar">
         <div class="sidebar-header">
             <a href="{{ url_for('drafts.create_draft') }}" class="new-project-btn">
-                📄 New Project
+                📄 New Draft
             </a>
         </div>
         
         <div class="drafts-section">
-            <div class="section-title">All Projects</div>
+            <div class="section-title">All Drafts</div>
             <div class="drafts-list" id="draftsList">
                 <!-- Drafts will be loaded here via JavaScript -->
             </div>
@@ -45,15 +36,13 @@
                 <div class="window-control minimize" id="editorMinimize"></div>
                 <div class="window-control maximize" id="editorMaximize"></div>
             </div>
-            <div class="window-title">Draft Mode Editor</div>
+            <div class="window-title"><div class="metadata-item">
+                <span class="metadata-value editable" id="draftTitle" data-type="draft">{{ draft.title }}</span>
+            </div></div>
         </div>
         
         <!-- Editor Metadata -->
         <div class="editor-metadata">
-            <div class="metadata-item">
-                <span class="metadata-label">Draft:</span>
-                <span class="metadata-value editable" id="draftTitle" data-type="draft">{{ draft.title }}</span>
-            </div>
             <div class="metadata-item">
                 <span class="metadata-label">Version:</span>
                 <span class="metadata-value editable" id="versionName" data-type="version">{{ current_version.version_name }}</span>
@@ -95,30 +84,33 @@ Start typing to see your content come to life..."
     <!-- Right Sidebar -->
     <div class="right-sidebar">
         <div class="sidebar-section">
-            <div class="section-title">Actions</div>
             <div class="action-buttons">
                 <button id="saveBtn" class="sidebar-button primary">
-                    💾 Save
+                    Save
                 </button>
                 
                 <button id="previewBtn" class="sidebar-button">
-                    👁️ Preview
+                    Preview
                 </button>
                 
                 <button id="newVersionBtn" class="sidebar-button">
-                    📄 New Version
+                    New Version
                 </button>
                 
                 <button id="compareBtn" class="sidebar-button">
-                    🔍 Compare
+                    Compare
                 </button>
                 
                 <button id="shareBtn" class="sidebar-button">
-                    🔗 Share
+                    Share
                 </button>
                 
                 <button id="exportBtn" class="sidebar-button">
-                    📁 Export MD
+                    Export
+                </button>
+
+                <button id="exportBtn" class="sidebar-button">
+                    Assist ✨
                 </button>
             </div>
         </div>

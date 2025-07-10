@@ -76,8 +76,8 @@
 }
 
 [data-theme="light"] .nav-link {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-primary);
+    /*background: var(--bg-tertiary);*/
+    /*border: 1px solid var(--border-primary);*/
     color: var(--text-secondary);
 }
 

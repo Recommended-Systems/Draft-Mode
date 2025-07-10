@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block window_title %}Dashboard - Draft Mode{% endblock %}
+{% block window_title %}Welcome, {{ user.name }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
@@ -9,14 +9,14 @@
 {% block breadcrumb %}
 <div class="breadcrumb">
     <span style="color: var(--accent-green); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-        System Status: Online<br>
-        ... Session: Active ► Total Projects: {{ drafts|length }} ► Total Versions: {% set total_versions = 0 %}
+        System Status: Online ► Session: Active <br>
+        ... Total Projects: {{ drafts|length }} ► Total Versions: {% set total_versions = 0 %}
             {% for draft in drafts %}
                 {% set total_versions = total_versions + draft.versions|length %}
             {% endfor %}
-            {{ total_versions }}
+            {{ user.total_versions }}
             {% if drafts|length > 0 %}
-                    ({{ "%.1f"|format(total_versions / drafts|length) }} avg)
+                    ({{ "%.1f"|format(user.total_versions / drafts|length) }} per draft)
             {% endif %}<br> 
         ... User: {{ user.name }} ► User Since: {{ user.created_at.strftime('%m/%y') }}
     </span>
@@ -28,6 +28,11 @@
 {% if drafts %}
 <h2>DRAFTS:</h2>
     <div class="drafts-list">
+        <a href="{{ url_for('drafts.create_draft') }}">
+            <div class="draft-card active">
+                <div class="draft-title">New Draft</div>
+            </div>
+        </a>
         {% for draft in drafts %}
         <div class="draft-card">
             <div class="draft-header">
