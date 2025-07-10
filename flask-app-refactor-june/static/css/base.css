@@ -9,6 +9,7 @@
     --text-muted: #888888;
     --border-primary: #333333;
     --border-secondary: #555555;
+    --white: #ffffff;
     
     /* Accent colors for interactive elements */
     --accent-green: #00ff41;
@@ -21,13 +22,14 @@
     --pixel-size: 2px;
     --glow-primary: 0 0 10px var(--accent-green);
     --glow-secondary: 0 0 5px var(--accent-blue);
-    --scan-lines: repeating-linear-gradient(
+    --scan-lines: #ffffff;
+    /*--scan-lines: repeating-linear-gradient(
         0deg,
         transparent,
         transparent 2px,
         rgba(255, 255, 255, 0.03) 2px,
         rgba(255, 255, 255, 0.03) 4px
-    );
+    );*/
 }
 
 * {
@@ -89,13 +91,13 @@ body {
 
 /* Top Navigation */
 .top-nav {
-    background: var(--bg-secondary);
-    border-bottom: 2px solid var(--border-primary);
+    background: var(--bg-primary);
+    /*border-bottom: 2px solid var(--border-primary);*/
     padding: 0;
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 0 var(--accent-green);
+    /*box-shadow: 0 2px 0 var(--accent-green);*/
 }
 
 .nav-container {
@@ -103,7 +105,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 8px 16px;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 

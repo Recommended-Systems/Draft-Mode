@@ -9,49 +9,24 @@
 {% block breadcrumb %}
 <div class="breadcrumb">
     <span style="color: var(--accent-green); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-        ► System Status: Online ► User: {{ user.name }} ► Session: Active
-    </span>
-</div>
-{% endblock %}
-
-{% block content %}
-<div class="dashboard-header">
-    <div class="dashboard-title">
-        <div class="title-icon">⚡</div>
-        <h2>System Dashboard</h2>
-    </div>
-    <div class="dashboard-actions">
-        <a href="{{ url_for("drafts.create_draft") }}" class="btn primary">+ New Draft</a>
-    </div>
-</div>
-
-<div class="stats-bar">
-    <div class="stat-card">
-        <div class="stat-label">Total Drafts</div>
-        <div class="stat-value">{{ drafts|length }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Total Versions</div>
-        <div class="stat-value">
-            {% set total_versions = 0 %}
+        System Status: Online<br>
+        ... Session: Active ► Total Projects: {{ drafts|length }} ► Total Versions: {% set total_versions = 0 %}
             {% for draft in drafts %}
                 {% set total_versions = total_versions + draft.versions|length %}
             {% endfor %}
             {{ total_versions }}
             {% if drafts|length > 0 %}
-                <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">
                     ({{ "%.1f"|format(total_versions / drafts|length) }} avg)
-                </span>
-            {% endif %}
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">User Since</div>
-        <div class="stat-value">{{ user.created_at.strftime('%m/%y') }}</div>
-    </div>
+            {% endif %}<br> 
+        ... User: {{ user.name }} ► User Since: {{ user.created_at.strftime('%m/%y') }}
+    </span>
 </div>
+{% endblock %}
+
+{% block content %}
 
 {% if drafts %}
+<h2>DRAFTS:</h2>
     <div class="drafts-list">
         {% for draft in drafts %}
         <div class="draft-card">

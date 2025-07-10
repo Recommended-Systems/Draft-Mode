@@ -17,15 +17,12 @@
     <nav class="top-nav">
         <div class="nav-container">
             <a href="{% if session.user_id %}{{ url_for('main.dashboard') }}{% else %}{{ url_for('main.index') }}{% endif %}" class="nav-brand">
-                <div class="dithered-logo">
-                    <div class="logo-icon">
-                        <canvas id="logoIconCanvas"></canvas>
-                    </div>
-                    <div class="logo-text">
-                        <canvas id="logoTextCanvas"></canvas>
-                    </div>
-                </div>
+                <div class="title-icon">⚡</div> Draft Mode
             </a>
+
+            <div style="width:60%; display:flex;">
+                <div style="height:1px; border-bottom:1px solid black; display:inline-flex; width:90%; margin: 0 auto;"></div>
+            </div>
             
             <button class="nav-toggle" id="navToggle">☰</button>
             
@@ -92,134 +89,6 @@
     </footer>
 
     <script>
-        // Dithered logo implementation
-        class DitheredLogo {
-            constructor(iconCanvas, textCanvas) {
-                this.iconCanvas = iconCanvas;
-                this.textCanvas = textCanvas;
-                this.iconCtx = iconCanvas.getContext('2d');
-                this.textCtx = textCanvas.getContext('2d');
-                
-                // Fixed smaller parameters for better readability
-                this.iconPixelSize = 1.2 + Math.random() * 0.8; // 1.2-2px
-                this.textPixelSize = 1.5 + Math.random() * 0.5; // 1.5-2px
-                this.distortion = 0.95 + Math.random() * 0.05; // 0.95-1.0 (much less distortion)
-                
-                this.setupCanvases();
-                this.render();
-            }
-
-            setupCanvases() {
-                const dpr = window.devicePixelRatio || 1;
-                
-                // Icon canvas setup
-                this.iconCanvas.width = 40 * dpr;
-                this.iconCanvas.height = 40 * dpr;
-                this.iconCanvas.style.width = '40px';
-                this.iconCanvas.style.height = '40px';
-                this.iconCtx.scale(dpr, dpr);
-                
-                // Text canvas setup
-                this.textCanvas.width = 200 * dpr;
-                this.textCanvas.height = 32 * dpr;
-                this.textCanvas.style.width = '200px';
-                this.textCanvas.style.height = '32px';
-                this.textCtx.scale(dpr, dpr);
-            }
-
-            renderIcon() {
-                // Get current theme colors
-                const theme = document.documentElement.getAttribute('data-theme') || 'light';
-                const bgColor = theme === 'light' ? '#ffffff' : '#000000';
-                const fgColor = theme === 'light' ? '#28a745' : '#00ff41';
-                
-                this.iconCtx.fillStyle = bgColor;
-                this.iconCtx.fillRect(0, 0, 40, 40);
-                
-                // Create off-screen canvas for icon
-                const tempCanvas = document.createElement('canvas');
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = 40;
-                tempCanvas.height = 40;
-                
-                tempCtx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
-                tempCtx.font = 'bold 24px "JetBrains Mono", monospace';
-                tempCtx.textAlign = 'center';
-                tempCtx.textBaseline = 'middle';
-                tempCtx.fillText('D', 20, 20);
-                
-                this.applyDithering(tempCtx, this.iconCtx, 40, 40, this.iconPixelSize, fgColor);
-            }
-
-            renderText() {
-                // Get current theme colors
-                const theme = document.documentElement.getAttribute('data-theme') || 'light';
-                const bgColor = theme === 'light' ? '#ffffff' : '#000000';
-                const fgColor = theme === 'light' ? '#28a745' : '#00ff41';
-                
-                this.textCtx.fillStyle = bgColor;
-                this.textCtx.fillRect(0, 0, 200, 32);
-                
-                // Create off-screen canvas for text
-                const tempCanvas = document.createElement('canvas');
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = 200;
-                tempCanvas.height = 32;
-                
-                tempCtx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
-                tempCtx.font = 'bold 16px "JetBrains Mono", monospace';
-                tempCtx.textAlign = 'left';
-                tempCtx.textBaseline = 'middle';
-                tempCtx.fillText('DRAFT MODE', 10, 16);
-                
-                this.applyDithering(tempCtx, this.textCtx, 200, 32, this.textPixelSize, fgColor);
-            }
-
-            applyDithering(sourceCtx, targetCtx, width, height, pixelSize, color) {
-                const imageData = sourceCtx.getImageData(0, 0, width, height);
-                const data = imageData.data;
-                
-                for (let y = 0; y < height; y += Math.floor(pixelSize)) {
-                    for (let x = 0; x < width; x += Math.floor(pixelSize)) {
-                        let brightness = 0;
-                        let pixelCount = 0;
-                        
-                        // Sample pixels in block
-                        for (let dy = 0; dy < Math.floor(pixelSize) && y + dy < height; dy++) {
-                            for (let dx = 0; dx < Math.floor(pixelSize) && x + dx < width; dx++) {
-                                const idx = ((y + dy) * width + (x + dx)) * 4;
-                                brightness += data[idx];
-                                pixelCount++;
-                            }
-                        }
-                        
-                        brightness /= pixelCount;
-                        
-                        // Apply threshold with minimal noise
-                        const noise = (Math.random() - 0.5) * 20; // Reduced noise
-                        const threshold = 128 + noise * (1 - this.distortion);
-                        
-                        if (brightness > threshold) {
-                            targetCtx.fillStyle = color;
-                            const offsetX = (Math.random() - 0.5) * 0.3 * (1 - this.distortion); // Minimal offset
-                            const offsetY = (Math.random() - 0.5) * 0.3 * (1 - this.distortion);
-                            
-                            targetCtx.fillRect(
-                                x + offsetX, 
-                                y + offsetY, 
-                                Math.floor(pixelSize), 
-                                Math.floor(pixelSize)
-                            );
-                        }
-                    }
-                }
-            }
-
-            render() {
-                this.renderIcon();
-                this.renderText();
-            }
-        }
 
         // Theme management
         function updateTheme() {
