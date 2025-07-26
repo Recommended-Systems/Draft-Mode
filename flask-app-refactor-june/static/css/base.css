@@ -115,6 +115,7 @@ body {
     gap: 12px;
     text-decoration: none;
     color: var(--text-primary);
+    width:140px;
 }
 
 .nav-brand:hover .dithered-logo {

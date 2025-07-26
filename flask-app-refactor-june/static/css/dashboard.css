@@ -21,15 +21,15 @@
 .title-icon {
     width: 24px;
     height: 24px;
-    background: var(--accent-green);
-    border: 1px solid var(--border-primary);
+    /* background: var(--accent-green); */
+    /* border: 1px solid var(--border-primary); */
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    color: var(--bg-primary);
+    color: var(--text-primary);
     font-size: 12px;
-    box-shadow: var(--glow-primary);
+    /* box-shadow: var(--glow-primary); */
 }
 
 .dashboard-actions {

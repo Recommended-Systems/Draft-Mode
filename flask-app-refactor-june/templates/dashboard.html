@@ -29,7 +29,7 @@
 <h2>DRAFTS:</h2>
     <div class="drafts-list">
         <a href="{{ url_for('drafts.create_draft') }}">
-            <div class="draft-card active">
+            <div class="draft-card active" style="background-color: rgba(0, 255, 65, 0.2);">
                 <div class="draft-title">New Draft</div>
             </div>
         </a>
@@ -106,9 +106,9 @@
                     </select>
                 {% endif %}
                 
-                <button class="action-btn rename" onclick="renameDraft({{ draft.id }}, '{{ draft.title }}')">
+                {# <button class="action-btn rename" onclick="renameDraft({{ draft.id }}, '{{ draft.title }}')">
                     Rename
-                </button>
+                </button> #}
             </div>
 
             <div>
