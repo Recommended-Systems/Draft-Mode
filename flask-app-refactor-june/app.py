@@ -1,5 +1,6 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from datetime import datetime
 import os
 
@@ -15,6 +16,10 @@ def create_app(config_name='development'):
     else:
         app.config.from_object('config.DevelopmentConfig')
     
+    # Initialize CSRF protection
+    csrf = CSRFProtect()
+    csrf.init_app(app)
+    
     # Initialize extensions with app
     from models import db
     db.init_app(app)
@@ -24,6 +29,47 @@ def create_app(config_name='development'):
     
     # Import models (needed for migrations)
     from models import User, BlogDraft, DraftVersion
+    
+    # Security middleware
+    @app.before_request
+    def force_https():
+        """Force HTTPS in production"""
+        if app.config.get('FORCE_HTTPS'):
+            if not request.is_secure and not app.debug:
+                return redirect(request.url.replace('http://', 'https://'))
+    
+    @app.after_request
+    def add_security_headers(response):
+        """Add security headers to all responses"""
+        # HTTPS Strict Transport Security
+        if app.config.get('FORCE_HTTPS'):
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        
+        # Prevent clickjacking
+        response.headers['X-Frame-Options'] = 'DENY'
+        
+        # Prevent MIME sniffing
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        
+        # XSS Protection
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        
+        # Referrer Policy
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        
+        # Content Security Policy
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none';"
+        )
+        response.headers['Content-Security-Policy'] = csp
+        
+        return response
     
     # Register blueprints
     from routes.auth import auth_bp
@@ -48,6 +94,13 @@ def create_app(config_name='development'):
         db.session.rollback()
         return render_template('500.html'), 500
     
+    # CSRF error handler
+    @app.errorhandler(400)
+    def csrf_error(error):
+        if error.description == "The CSRF token is missing.":
+            return render_template('errors/csrf_error.html'), 400
+        return render_template('500.html'), 400
+    
     # Context processors
     @app.context_processor
     def inject_globals():
@@ -62,4 +115,10 @@ if __name__ == '__main__':
     with app.app_context():
         from models import db
         db.create_all()
-    app.run(debug=True)
+    
+    # Development server settings
+    if app.config.get('DEBUG'):
+        app.run(debug=True, host='127.0.0.1', port=5000)
+    else:
+        # Production should use a proper WSGI server
+        app.run(debug=False, host='0.0.0.0', port=8000)
