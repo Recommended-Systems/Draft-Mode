@@ -1,12 +1,38 @@
-// Editor JavaScript Module
+// Editor JavaScript Module with CSRF Protection
 class DraftEditor {
     constructor() {
         this.data = null;
         this.autoSaveTimeout = null;
         this.lastSavedContent = '';
         this.pendingTag = null;
+        this.csrfToken = this.getCSRFToken();
         
         this.init();
+    }
+    
+    getCSRFToken() {
+        // Get CSRF token from meta tag
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        return tokenMeta ? tokenMeta.getAttribute('content') : null;
+    }
+    
+    // Helper method to include CSRF token in fetch requests
+    async secureFetch(url, options = {}) {
+        if (!options.headers) {
+            options.headers = {};
+        }
+        
+        // Add CSRF token for non-GET requests
+        if (options.method && options.method.toUpperCase() !== 'GET') {
+            options.headers['X-CSRFToken'] = this.csrfToken;
+        }
+        
+        // Set content type for JSON requests
+        if (options.body && typeof options.body === 'string') {
+            options.headers['Content-Type'] = 'application/json';
+        }
+        
+        return fetch(url, options);
     }
     
     init() {
@@ -335,9 +361,8 @@ class DraftEditor {
         this.updateSaveStatus('Saving...', 'saving');
         
         try {
-            const response = await fetch(`/drafts/versions/${this.data.currentVersionId}/save`, {
+            const response = await this.secureFetch(`/drafts/versions/${this.data.currentVersionId}/save`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: content })
             });
             
@@ -386,7 +411,7 @@ class DraftEditor {
     
     async loadDraftsList() {
         try {
-            const response = await fetch('/api/drafts');
+            const response = await this.secureFetch('/api/drafts');
             const data = await response.json();
             
             this.renderDraftsList(data.drafts);
@@ -471,6 +496,7 @@ class DraftEditor {
         const formData = new FormData();
         formData.append('version_name', versionName);
         formData.append('content', content);
+        formData.append('csrf_token', this.csrfToken);
         
         try {
             const response = await fetch(`/drafts/${this.data.draftId}/versions`, {
@@ -502,9 +528,8 @@ class DraftEditor {
     
     async generateShareLink() {
         try {
-            const response = await fetch(`/drafts/versions/${this.data.currentVersionId}/share`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+            const response = await this.secureFetch(`/drafts/versions/${this.data.currentVersionId}/share`, {
+                method: 'POST'
             });
             
             const data = await response.json();
@@ -540,9 +565,8 @@ class DraftEditor {
         const content = this.elements.contentEditor.value;
         
         try {
-            const response = await fetch(`/drafts/versions/${this.data.currentVersionId}/preview`, {
+            const response = await this.secureFetch(`/drafts/versions/${this.data.currentVersionId}/preview`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: content })
             });
             
@@ -569,9 +593,8 @@ class DraftEditor {
     
     async setVersionTag(tag) {
         try {
-            const response = await fetch(`/drafts/versions/${this.data.currentVersionId}/set_tag`, {
+            const response = await this.secureFetch(`/drafts/versions/${this.data.currentVersionId}/set_tag`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tag: tag })
             });
             
@@ -620,9 +643,8 @@ class DraftEditor {
                     payload = { name: newValue };
                 }
                 
-                const response = await fetch(endpoint, {
+                const response = await this.secureFetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 
