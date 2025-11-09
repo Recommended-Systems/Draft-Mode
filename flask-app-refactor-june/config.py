@@ -34,11 +34,16 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///draft_mode_prod.db'
     
-    # Ensure SECRET_KEY is set in production
-    if not os.environ.get('SECRET_KEY'):
-        raise ValueError("No SECRET_KEY set for production environment")
+    # Validate SECRET_KEY at instantiation, not at class definition
+    @property
+    def SECRET_KEY(self):
+        secret_key = os.environ.get('SECRET_KEY')
+        if not secret_key:
+            raise ValueError("No SECRET_KEY set for production environment")
+        return secret_key
+    
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///draft_mode_prod.db'
     
     # Production security settings
     SESSION_COOKIE_SECURE = True
