@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash, current_app
 from models import db, User, BlogDraft, DraftVersion
 from utils.decorators import login_required, get_current_user
-import markdown
+from utils.markdown_renderer import render_markdown_safe
 import secrets
 
 drafts_bp = Blueprint('drafts', __name__)
@@ -13,13 +13,21 @@ def create_draft():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
-        
+
         if not title:
             flash('Draft title is required')
             return render_template('create_draft.html')
-        
+
         user = get_current_user()
-        
+
+        # Check draft limit
+        draft_count = BlogDraft.query.filter_by(user_id=user.id).count()
+        max_drafts = current_app.config.get('MAX_DRAFTS_PER_USER', 100)
+
+        if draft_count >= max_drafts:
+            flash(f'You have reached the maximum limit of {max_drafts} drafts. Please delete some drafts before creating new ones.')
+            return render_template('create_draft.html')
+
         try:
             # Create draft
             draft = BlogDraft(
@@ -90,13 +98,23 @@ def create_version(draft_id):
     """Create a new version of a draft"""
     user = get_current_user()
     draft = BlogDraft.query.filter_by(id=draft_id, user_id=user.id).first_or_404()
-    
+
     version_name = request.form.get('version_name', '').strip()
     content = request.form.get('content', '')
-    
+
     if not version_name:
         return jsonify({'success': False, 'error': 'Version name is required'})
-    
+
+    # Check version count limit
+    version_count = DraftVersion.query.filter_by(blog_draft_id=draft.id).count()
+    max_versions = current_app.config.get('MAX_VERSIONS_PER_DRAFT', 50)
+
+    if version_count >= max_versions:
+        return jsonify({
+            'success': False,
+            'error': f'Maximum versions per draft ({max_versions}) exceeded. Please delete old versions.'
+        }), 403
+
     try:
         # Unset current version
         DraftVersion.query.filter_by(
@@ -130,14 +148,24 @@ def save_version(version_id):
         DraftVersion.id == version_id,
         BlogDraft.user_id == user.id
     ).first_or_404()
-    
+
     content = request.json.get('content', '') if request.is_json else request.form.get('content', '')
-    
+
+    # Validate content size
+    content_size = len(content.encode('utf-8'))
+    max_size = current_app.config.get('DRAFT_CONTENT_MAX_SIZE', 1 * 1024 * 1024)
+
+    if content_size > max_size:
+        return jsonify({
+            'success': False,
+            'error': f'Content exceeds maximum size of {max_size // (1024 * 1024)}MB'
+        }), 413
+
     try:
         version.content = content
         db.session.commit()
         return jsonify({'success': True})
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': 'Failed to save content'})
@@ -151,37 +179,25 @@ def preview_version(version_id):
         DraftVersion.id == version_id,
         BlogDraft.user_id == user.id
     ).first_or_404()
-    
+
     # Get content from request if provided, otherwise use saved content
     content = request.json.get('content', version.content) if request.is_json else version.content
-    
-    try:
-        html_content = markdown.markdown(
-            content, 
-            extensions=['extra', 'codehilite', 'fenced_code']
-        )
-    except Exception:
-        # Fallback to basic markdown if extensions fail
-        html_content = markdown.markdown(content)
-    
-    return jsonify({'html': html_content})
+
+    # Safely render markdown with XSS protection
+    html_content = render_markdown_safe(content)
+
+    return jsonify({'html': str(html_content)})
 
 @drafts_bp.route('/preview', methods=['POST'])
 @login_required
 def preview_content():
     """Preview content without needing a specific version ID"""
     content = request.json.get('content', '') if request.is_json else ''
-    
-    try:
-        html_content = markdown.markdown(
-            content, 
-            extensions=['extra', 'codehilite', 'fenced_code']
-        )
-    except Exception:
-        # Fallback to basic markdown if extensions fail
-        html_content = markdown.markdown(content)
-    
-    return jsonify({'html': html_content})
+
+    # Safely render markdown with XSS protection
+    html_content = render_markdown_safe(content)
+
+    return jsonify({'html': str(html_content)})
 
 @drafts_bp.route('/compare/<int:version1_id>/<int:version2_id>')
 @login_required

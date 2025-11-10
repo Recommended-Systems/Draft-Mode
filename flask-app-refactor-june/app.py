@@ -1,13 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime
 import os
 
 def create_app(config_name='development'):
     """Application factory pattern"""
     app = Flask(__name__)
-    
+
     # Configuration
     if config_name == 'production':
         app.config.from_object('config.ProductionConfig')
@@ -15,17 +17,33 @@ def create_app(config_name='development'):
         app.config.from_object('config.TestingConfig')
     else:
         app.config.from_object('config.DevelopmentConfig')
-    
+
     # Initialize CSRF protection
     csrf = CSRFProtect()
     csrf.init_app(app)
-    
+
+    # Initialize rate limiter
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=["200 per day", "50 per hour"],
+        storage_uri=app.config.get('RATELIMIT_STORAGE_URI', 'memory://'),
+        strategy="fixed-window"
+    )
+    # Store limiter in app config so routes can access it
+    app.limiter = limiter
+
     # Initialize extensions with app
     from models import db
     db.init_app(app)
-    
+
     migrate = Migrate()
     migrate.init_app(app, db)
+
+    # Initialize security logger
+    from utils.security_logger import security_logger
+    security_logger.init_app(app)
+    app.security_logger = security_logger
     
     # Import models (needed for migrations)
     from models import User, BlogDraft, DraftVersion
@@ -77,7 +95,7 @@ def create_app(config_name='development'):
     from routes.drafts import drafts_bp
     from routes.api import api_bp
     from routes.settings import settings_bp
-    
+
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(main_bp)
     app.register_blueprint(drafts_bp, url_prefix='/drafts')
@@ -93,13 +111,21 @@ def create_app(config_name='development'):
     def internal_error(error):
         db.session.rollback()
         return render_template('500.html'), 500
-    
+
     # CSRF error handler
     @app.errorhandler(400)
     def csrf_error(error):
         if error.description == "The CSRF token is missing.":
             return render_template('errors/csrf_error.html'), 400
         return render_template('500.html'), 400
+
+    # Rate limit error handler
+    @app.errorhandler(429)
+    def ratelimit_error(error):
+        from flask import jsonify
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
+        return render_template('500.html'), 429
     
     # Context processors
     @app.context_processor

@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from models import db, User
 from utils.decorators import login_required, get_current_user
+from utils.password_validator import validate_password_strength
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -37,11 +38,14 @@ def profile():
             if not user.check_password(current_password):
                 flash('Current password is incorrect')
                 return render_template('settings/profile.html', user=user)
-            
-            if len(new_password) < 6:
-                flash('New password must be at least 6 characters long')
+
+            # Validate new password strength
+            is_valid, errors = validate_password_strength(new_password)
+            if not is_valid:
+                for error in errors:
+                    flash(error)
                 return render_template('settings/profile.html', user=user)
-            
+
             if new_password != confirm_password:
                 flash('New passwords do not match')
                 return render_template('settings/profile.html', user=user)

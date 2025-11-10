@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request
 from models import User, BlogDraft, DraftVersion
 from utils.decorators import login_required, get_current_user
-import markdown
-from markupsafe import Markup
+from utils.markdown_renderer import render_markdown_safe
 
 main_bp = Blueprint('main', __name__)
 
@@ -26,18 +25,12 @@ def dashboard():
 def public_view(share_token):
     """View a publicly shared version without authentication"""
     version = DraftVersion.query.filter_by(share_token=share_token).first_or_404()
-    
-    try:
-        html_content = markdown.markdown(
-            version.content, 
-            extensions=['extra', 'codehilite', 'fenced_code']
-        )
-    except Exception:
-        # Fallback to basic markdown if extensions fail
-        html_content = markdown.markdown(version.content)
-    
-    return render_template('public_view.html', 
-                         version=version, 
+
+    # Safely render markdown with XSS protection
+    html_content = render_markdown_safe(version.content)
+
+    return render_template('public_view.html',
+                         version=version,
                          draft=version.blog_draft,
                          author=version.blog_draft.author,
-                         html_content=Markup(html_content))
+                         html_content=html_content)

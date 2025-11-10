@@ -21,17 +21,19 @@ class DraftEditor {
         if (!options.headers) {
             options.headers = {};
         }
-        
+
         // Add CSRF token for non-GET requests
         if (options.method && options.method.toUpperCase() !== 'GET') {
-            options.headers['X-CSRFToken'] = this.csrfToken;
+            if (this.csrfToken) {
+                options.headers['X-CSRFToken'] = this.csrfToken;
+            }
         }
-        
+
         // Set content type for JSON requests
         if (options.body && typeof options.body === 'string') {
             options.headers['Content-Type'] = 'application/json';
         }
-        
+
         return fetch(url, options);
     }
     
@@ -569,21 +571,38 @@ class DraftEditor {
         input.type = 'text';
         input.value = currentValue;
         input.className = 'metadata-value editing';
-        
-        element.parentNode.replaceChild(input, element);
+
+        const parent = element.parentNode;
+        parent.replaceChild(input, element);
         input.focus();
         input.select();
-        
-        const saveEdit = async () => {
-            const newValue = input.value.trim();
-            if (!newValue || newValue === currentValue) {
+
+        let isProcessing = false; // Prevent double execution
+
+        const restoreElement = () => {
+            // Check if input is still in the DOM before replacing
+            if (input.parentNode) {
                 input.parentNode.replaceChild(element, input);
+            }
+        };
+
+        const saveEdit = async () => {
+            // Prevent multiple simultaneous executions
+            if (isProcessing) {
                 return;
             }
-            
+
+            const newValue = input.value.trim();
+            if (!newValue || newValue === currentValue) {
+                restoreElement();
+                return;
+            }
+
+            isProcessing = true;
+
             try {
                 let endpoint, payload;
-                
+
                 if (type === 'draft') {
                     endpoint = `/drafts/${this.data.draftId}/rename`;
                     payload = { name: newValue };
@@ -591,18 +610,29 @@ class DraftEditor {
                     endpoint = `/drafts/versions/${this.data.currentVersionId}/rename`;
                     payload = { name: newValue };
                 }
-                
+
                 const response = await this.secureFetch(endpoint, {
                     method: 'POST',
                     body: JSON.stringify(payload)
                 });
-                
+
+                // Check if response is OK
+                if (!response.ok) {
+                    console.error('Server returned error:', response.status, response.statusText);
+                    const text = await response.text();
+                    console.error('Response body:', text);
+                    alert('Failed to update name: Server error');
+                    restoreElement();
+                    isProcessing = false;
+                    return;
+                }
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     element.textContent = newValue;
-                    input.parentNode.replaceChild(element, input);
-                    
+                    restoreElement();
+
                     // Update data
                     if (type === 'draft') {
                         this.data.draft.title = newValue;
@@ -610,22 +640,26 @@ class DraftEditor {
                         this.data.currentVersion.version_name = newValue;
                     }
                 } else {
-                    alert('Failed to update name');
-                    input.parentNode.replaceChild(element, input);
+                    console.error('Update failed:', data.error || 'Unknown error');
+                    alert('Failed to update name: ' + (data.error || 'Unknown error'));
+                    restoreElement();
                 }
             } catch (error) {
-                alert('Failed to update name');
-                input.parentNode.replaceChild(element, input);
+                console.error('Exception during rename:', error);
+                alert('Failed to update name: ' + error.message);
+                restoreElement();
+            } finally {
+                isProcessing = false;
             }
         };
-        
+
         input.addEventListener('blur', saveEdit);
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 saveEdit();
             } else if (e.key === 'Escape') {
-                input.parentNode.replaceChild(element, input);
+                restoreElement();
             }
         });
     }
