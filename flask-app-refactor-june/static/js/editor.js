@@ -42,7 +42,6 @@ class DraftEditor {
         // Initialize components
         this.initElements();
         this.initEventListeners();
-        this.initWindowControls();
         this.loadDraftsList();
         
         // Initialize content
@@ -95,10 +94,7 @@ class DraftEditor {
             shareLinkContainer: document.getElementById('shareLinkContainer'),
             previewContent: document.getElementById('previewContent'),
             
-            // Window controls
-            editorClose: document.getElementById('editorClose'),
-            editorMinimize: document.getElementById('editorMinimize'),
-            editorMaximize: document.getElementById('editorMaximize'),
+            // Editor container
             editorContainer: document.getElementById('editorContainer')
         };
     }
@@ -254,63 +250,6 @@ class DraftEditor {
                 document.querySelectorAll('.modal-overlay').forEach(modal => {
                     modal.style.display = 'none';
                 });
-            }
-        });
-    }
-    
-    initWindowControls() {
-        this.elements.editorClose.addEventListener('click', () => {
-            if (confirm('Close editor? Any unsaved changes will be lost.')) {
-                window.location.href = '/dashboard';
-            }
-        });
-        
-        this.elements.editorMinimize.addEventListener('click', () => {
-            const container = this.elements.editorContainer;
-            if (container.style.transform === 'scale(0.1)') {
-                container.style.transform = 'scale(1)';
-                container.style.opacity = '1';
-            } else {
-                container.style.transform = 'scale(0.1)';
-                container.style.opacity = '0.3';
-            }
-            container.style.transition = 'all 0.3s ease';
-        });
-        
-        this.elements.editorMaximize.addEventListener('click', () => {
-            const layout = document.querySelector('.editor-layout');
-            const isMaximized = layout.getAttribute('data-maximized') === 'true';
-            
-            if (!isMaximized) {
-                // Store original styles
-                layout.setAttribute('data-original-position', layout.style.position || '');
-                layout.setAttribute('data-original-top', layout.style.top || '');
-                layout.setAttribute('data-original-left', layout.style.left || '');
-                layout.setAttribute('data-original-right', layout.style.right || '');
-                layout.setAttribute('data-original-bottom', layout.style.bottom || '');
-                layout.setAttribute('data-original-z-index', layout.style.zIndex || '');
-                layout.setAttribute('data-original-margin', layout.style.margin || '');
-                
-                // Maximize
-                layout.style.position = 'fixed';
-                layout.style.top = '0';
-                layout.style.left = '0';
-                layout.style.right = '0';
-                layout.style.bottom = '0';
-                layout.style.zIndex = '999';
-                layout.style.margin = '0';
-                layout.style.transition = 'all 0.3s ease';
-                layout.setAttribute('data-maximized', 'true');
-            } else {
-                // Restore
-                layout.style.position = layout.getAttribute('data-original-position');
-                layout.style.top = layout.getAttribute('data-original-top');
-                layout.style.left = layout.getAttribute('data-original-left');
-                layout.style.right = layout.getAttribute('data-original-right');
-                layout.style.bottom = layout.getAttribute('data-original-bottom');
-                layout.style.zIndex = layout.getAttribute('data-original-z-index');
-                layout.style.margin = layout.getAttribute('data-original-margin');
-                layout.setAttribute('data-maximized', 'false');
             }
         });
     }

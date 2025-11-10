@@ -37,7 +37,16 @@
         <div class="draft-card">
             <div class="draft-header">
                 <div class="draft-title">
-                    {{ draft.title }}
+                    {% if draft.versions %}
+                        {% set current_version = draft.versions|selectattr('is_current')|first %}
+                        {% if current_version %}
+                            <a href="{{ url_for('drafts.edit_draft', draft_id=draft.id, version=current_version.id) }}" style="color: inherit; text-decoration: none;">{{ draft.title }}</a>
+                        {% else %}
+                            <a href="{{ url_for('drafts.edit_draft', draft_id=draft.id) }}" style="color: inherit; text-decoration: none;">{{ draft.title }}</a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('drafts.edit_draft', draft_id=draft.id) }}" style="color: inherit; text-decoration: none;">{{ draft.title }}</a>
+                    {% endif %}
                     {% if draft.versions %}
                         {% set has_final = false %}
                         {% set has_review = false %}

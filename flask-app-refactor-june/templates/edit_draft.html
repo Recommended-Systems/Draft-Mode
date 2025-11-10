@@ -29,16 +29,11 @@
     
     <!-- Main Editor -->
     <div class="main-editor">
-        <!-- Editor Window Controls -->
-        <div class="editor-window-header">
-            <div class="window-controls">
-                <div class="window-control close" id="editorClose"></div>
-                <div class="window-control minimize" id="editorMinimize"></div>
-                <div class="window-control maximize" id="editorMaximize"></div>
-            </div>
-            <div class="window-title"><div class="metadata-item">
+        <!-- Editor Header - simplified -->
+        <div class="editor-header">
+            <div class="editor-title">
                 <span class="metadata-value editable" id="draftTitle" data-type="draft">{{ draft.title }}</span>
-            </div></div>
+            </div>
         </div>
         
         <!-- Editor Metadata -->
@@ -109,7 +104,7 @@ Start typing to see your content come to life..."
                     Export
                 </button>
 
-                <button id="exportBtn" class="sidebar-button">
+                <button id="assistBtn" class="sidebar-button">
                     Assist ✨
                 </button>
             </div>

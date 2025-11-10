@@ -29,7 +29,6 @@
             <div class="nav-menu" id="navMenu">
                 {% if session.user_id %}
                     <a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a>
-                    <!-- <a href="{{ url_for('drafts.create_draft') }}" class="nav-link primary">New Draft</a> -->
                     <a href="{{ url_for('settings.profile') }}" class="nav-link">Settings</a>
                     <a href="{{ url_for("auth.logout") }}" class="nav-link">Logout</a>
                 {% else %}
@@ -43,17 +42,8 @@
     <!-- Main Content -->
     <div class="main-container">
         {% if request.endpoint != 'drafts.edit_draft' %}
-        <!-- Standard pages get the window wrapper -->
-        <div class="window">
-            <div class="title-bar">
-                <div class="window-controls">
-                    <div class="window-control close"></div>
-                    <div class="window-control minimize"></div>
-                    <div class="window-control maximize"></div>
-                </div>
-                <div class="window-title">{% block window_title %}Draft Mode{% endblock %}</div>
-            </div>
-            
+        <!-- Standard pages get the content wrapper -->
+        <div class="content-wrapper">
             <div class="content">
                 {% block breadcrumb %}{% endblock %}
                 
@@ -63,7 +53,7 @@
             </div>
         </div>
         {% else %}
-        <!-- Editor pages get full layout without window wrapper -->
+        <!-- Editor pages get full layout without wrapper -->
         {% block breadcrumb_editor %}{% endblock %}
         
         {% include 'partials/flash_messages.html' %}
@@ -124,57 +114,6 @@
                     navMenu.classList.toggle('active');
                 });
             }
-
-            // Window control interactions (only for non-editor pages)
-            {% if request.endpoint != 'drafts.edit_draft' %}
-            document.querySelector('.window-control.close')?.addEventListener('click', () => {
-                alert('Nice try! 😄 This is just a demo interface.');
-            });
-
-            document.querySelector('.window-control.minimize')?.addEventListener('click', () => {
-                const content = document.querySelector('.content');
-                content.style.transform = content.style.transform === 'scale(0.1)' ? 'scale(1)' : 'scale(0.1)';
-                content.style.transition = 'transform 0.3s ease';
-            });
-
-            document.querySelector('.window-control.maximize')?.addEventListener('click', () => {
-                const window = document.querySelector('.window');
-                const isMaximized = window.getAttribute('data-maximized') === 'true';
-                
-                if (!isMaximized) {
-                    // Store original styles
-                    window.setAttribute('data-original-position', window.style.position || '');
-                    window.setAttribute('data-original-top', window.style.top || '');
-                    window.setAttribute('data-original-left', window.style.left || '');
-                    window.setAttribute('data-original-right', window.style.right || '');
-                    window.setAttribute('data-original-bottom', window.style.bottom || '');
-                    window.setAttribute('data-original-z-index', window.style.zIndex || '');
-                    window.setAttribute('data-original-margin', window.style.margin || '');
-                    
-                    // Maximize
-                    window.style.position = 'fixed';
-                    window.style.top = '0';
-                    window.style.left = '0';
-                    window.style.right = '0';
-                    window.style.bottom = '0';
-                    window.style.zIndex = '999';
-                    window.style.margin = '0';
-                    window.style.transition = 'all 0.3s ease';
-                    window.setAttribute('data-maximized', 'true');
-                } else {
-                    // Restore original styles
-                    window.style.position = window.getAttribute('data-original-position');
-                    window.style.top = window.getAttribute('data-original-top');
-                    window.style.left = window.getAttribute('data-original-left');
-                    window.style.right = window.getAttribute('data-original-right');
-                    window.style.bottom = window.getAttribute('data-original-bottom');
-                    window.style.zIndex = window.getAttribute('data-original-z-index');
-                    window.style.margin = window.getAttribute('data-original-margin');
-                    window.style.transition = 'all 0.3s ease';
-                    window.setAttribute('data-original-z-index', 'false');
-                }
-            });
-            {% endif %}
         });
     </script>
     
