@@ -104,7 +104,17 @@ class DraftEditor {
         this.elements.contentEditor.addEventListener('input', () => {
             this.handleContentChange();
         });
-        
+
+        // Focus mode - fade sidebars when editor is active
+        const editorLayout = document.querySelector('.editor-layout');
+        this.elements.contentEditor.addEventListener('focus', () => {
+            editorLayout.classList.add('focus-mode');
+        });
+
+        this.elements.contentEditor.addEventListener('blur', () => {
+            editorLayout.classList.remove('focus-mode');
+        });
+
         // Save button
         this.elements.saveBtn.addEventListener('click', () => {
             this.saveContent();
