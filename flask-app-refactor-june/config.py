@@ -29,6 +29,16 @@ class Config:
     MAX_VERSIONS_PER_DRAFT = 50
     MAX_DRAFTS_PER_USER = 100
 
+    # Email configuration
+    EMAIL_ENABLED = False  # Set to True in production when configured
+    EMAIL_FROM = os.environ.get('EMAIL_FROM', 'noreply@draftmode.app')
+    APP_NAME = 'Draft Mode'
+
+    # CORS configuration
+    # Set CORS_ORIGINS environment variable in production (comma-separated list)
+    # Example: CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
+
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from datetime import datetime
@@ -21,6 +22,20 @@ def create_app(config_name='development'):
     # Initialize CSRF protection
     csrf = CSRFProtect()
     csrf.init_app(app)
+
+    # Initialize CORS for API endpoints
+    # In production, set CORS_ORIGINS environment variable to your frontend domain
+    cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": cors_origins,
+            "methods": ["GET", "POST", "PUT", "DELETE"],
+            "allow_headers": ["Content-Type", "X-API-Key"],
+            "expose_headers": ["Content-Type"],
+            "supports_credentials": False,
+            "max_age": 3600
+        }
+    })
 
     # Initialize rate limiter
     limiter = Limiter(
@@ -44,6 +59,11 @@ def create_app(config_name='development'):
     from utils.security_logger import security_logger
     security_logger.init_app(app)
     app.security_logger = security_logger
+
+    # Initialize email service
+    from utils.email_service import email_service
+    email_service.init_app(app)
+    app.email_service = email_service
     
     # Import models (needed for migrations)
     from models import User, BlogDraft, DraftVersion
@@ -61,20 +81,36 @@ def create_app(config_name='development'):
         """Add security headers to all responses"""
         # HTTPS Strict Transport Security
         if app.config.get('FORCE_HTTPS'):
-            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-        
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+
         # Prevent clickjacking
         response.headers['X-Frame-Options'] = 'DENY'
-        
+
         # Prevent MIME sniffing
         response.headers['X-Content-Type-Options'] = 'nosniff'
-        
+
         # XSS Protection
         response.headers['X-XSS-Protection'] = '1; mode=block'
-        
+
         # Referrer Policy
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        
+
+        # Permissions Policy - restrict access to browser features
+        permissions_policy = (
+            "geolocation=(), "
+            "microphone=(), "
+            "camera=(), "
+            "payment=(), "
+            "usb=(), "
+            "magnetometer=(), "
+            "gyroscope=(), "
+            "speaker=(self), "
+            "vibrate=(), "
+            "fullscreen=(self), "
+            "sync-xhr=()"
+        )
+        response.headers['Permissions-Policy'] = permissions_policy
+
         # Content Security Policy
         csp = (
             "default-src 'self'; "
@@ -83,10 +119,18 @@ def create_app(config_name='development'):
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data:; "
             "connect-src 'self'; "
-            "frame-ancestors 'none';"
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "frame-ancestors 'none'; "
+            "object-src 'none'; "
         )
+
+        # Add upgrade-insecure-requests in production
+        if app.config.get('FORCE_HTTPS'):
+            csp += "upgrade-insecure-requests;"
+
         response.headers['Content-Security-Policy'] = csp
-        
+
         return response
     
     # Register blueprints

@@ -479,21 +479,27 @@ class DraftEditor {
     
     async generateShareLink() {
         try {
+            console.log('Generating share link for version:', this.data.currentVersionId);
             const response = await this.secureFetch(`/drafts/versions/${this.data.currentVersionId}/share`, {
                 method: 'POST'
             });
-            
+
+            console.log('Response status:', response.status);
             const data = await response.json();
-            
+            console.log('Response data:', data);
+
             if (data.success) {
                 this.elements.shareLink.textContent = data.share_url;
                 this.elements.shareLinkContainer.style.display = 'block';
                 document.getElementById('copyShareLink').style.display = 'inline-block';
+                document.getElementById('generateShareLink').style.display = 'none';
             } else {
-                alert('Failed to generate share link');
+                console.error('Share link generation failed:', data.error);
+                alert('Failed to generate share link: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
-            alert('Failed to generate share link');
+            console.error('Error generating share link:', error);
+            alert('Failed to generate share link: ' + error.message);
         }
     }
     

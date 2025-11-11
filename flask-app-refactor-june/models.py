@@ -13,24 +13,126 @@ db = SQLAlchemy()
 class User(db.Model):
     """User model for authentication and draft ownership"""
     __tablename__ = 'users'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
+    # Account lockout fields
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
+
+    # Email verification fields
+    email_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(100), unique=True, nullable=True)
+    verification_token_expires = db.Column(db.DateTime, nullable=True)
+
+    # Password reset fields
+    reset_token = db.Column(db.String(100), unique=True, nullable=True)
+    reset_token_expires = db.Column(db.DateTime, nullable=True)
+
+    # API token field
+    api_token = db.Column(db.String(64), unique=True, nullable=True)
+    api_token_created = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     blog_drafts = db.relationship('BlogDraft', backref='author', lazy=True, cascade='all, delete-orphan')
     
     def set_password(self, password):
         """Hash and set password"""
         self.password_hash = generate_password_hash(password)
-    
+
     def check_password(self, password):
         """Check if provided password matches hash"""
         return check_password_hash(self.password_hash, password)
+
+    # Account lockout methods
+    def is_locked(self):
+        """Check if account is currently locked"""
+        if self.locked_until and datetime.utcnow() < self.locked_until:
+            return True
+        return False
+
+    def record_failed_login(self):
+        """Record a failed login attempt and lock if threshold exceeded"""
+        from datetime import timedelta
+        self.failed_login_attempts += 1
+
+        # Lock account for 30 minutes after 5 failed attempts
+        if self.failed_login_attempts >= 5:
+            self.locked_until = datetime.utcnow() + timedelta(minutes=30)
+
+        db.session.commit()
+
+    def reset_failed_attempts(self):
+        """Reset failed login attempts after successful login"""
+        self.failed_login_attempts = 0
+        self.locked_until = None
+        db.session.commit()
+
+    # Email verification methods
+    def generate_verification_token(self):
+        """Generate email verification token"""
+        from datetime import timedelta
+        self.verification_token = secrets.token_urlsafe(32)
+        self.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+        return self.verification_token
+
+    def verify_email(self, token):
+        """Verify email with token"""
+        if not self.verification_token or self.verification_token != token:
+            return False
+        if datetime.utcnow() > self.verification_token_expires:
+            return False
+        self.email_verified = True
+        self.verification_token = None
+        self.verification_token_expires = None
+        db.session.commit()
+        return True
+
+    # Password reset methods
+    def generate_reset_token(self):
+        """Generate password reset token"""
+        from datetime import timedelta
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        db.session.commit()
+        return self.reset_token
+
+    def verify_reset_token(self, token):
+        """Verify password reset token"""
+        if not self.reset_token or self.reset_token != token:
+            return False
+        if datetime.utcnow() > self.reset_token_expires:
+            return False
+        return True
+
+    def reset_password(self, token, new_password):
+        """Reset password with valid token"""
+        if not self.verify_reset_token(token):
+            return False
+        self.set_password(new_password)
+        self.reset_token = None
+        self.reset_token_expires = None
+        db.session.commit()
+        return True
+
+    # API token methods
+    def generate_api_token(self):
+        """Generate API token for programmatic access"""
+        self.api_token = secrets.token_urlsafe(48)
+        self.api_token_created = datetime.utcnow()
+        db.session.commit()
+        return self.api_token
+
+    def revoke_api_token(self):
+        """Revoke the current API token"""
+        self.api_token = None
+        self.api_token_created = None
+        db.session.commit()
     
     @property
     def total_drafts(self):
@@ -120,7 +222,7 @@ class BlogDraft(db.Model):
 class DraftVersion(db.Model):
     """Individual version of a blog draft"""
     __tablename__ = 'draft_versions'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     version_name = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False, default='')
@@ -129,12 +231,24 @@ class DraftVersion(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_current = db.Column(db.Boolean, default=False)
     share_token = db.Column(db.String(32), unique=True, nullable=True, index=True)
+    share_token_expires = db.Column(db.DateTime, nullable=True)
     tag = db.Column(db.String(50), default='draft')  # New tag field: draft, final, ready_for_review, working
-    
-    def generate_share_token(self):
+
+    def generate_share_token(self, expires_in_days=30):
         """Generate a unique share token for public access"""
+        from datetime import timedelta
         if not self.share_token:
             self.share_token = secrets.token_urlsafe(16)
+        # Always update expiration date
+        self.share_token_expires = datetime.utcnow() + timedelta(days=expires_in_days)
+
+    def is_share_token_valid(self):
+        """Check if share token is still valid"""
+        if not self.share_token:
+            return False
+        if not self.share_token_expires:
+            return True  # Tokens created before expiration feature
+        return datetime.utcnow() < self.share_token_expires
     
     @property
     def word_count(self):

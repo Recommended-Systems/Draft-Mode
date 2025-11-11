@@ -91,15 +91,15 @@ def delete_account():
     """Delete user account (with confirmation)"""
     user = get_current_user()
     password = request.form.get('password', '')
-    
+
     if not password:
         flash('Password is required to delete account')
         return redirect(url_for('settings.profile'))
-    
+
     if not user.check_password(password):
         flash('Incorrect password')
         return redirect(url_for('settings.profile'))
-    
+
     try:
         # This will cascade delete all drafts and versions due to the relationship setup
         db.session.delete(user)
@@ -107,8 +107,42 @@ def delete_account():
         session.clear()
         flash('Your account has been deleted', 'success')
         return redirect(url_for('main.index'))
-        
+
     except Exception as e:
         db.session.rollback()
         flash('An error occurred while deleting your account')
         return redirect(url_for('settings.profile'))
+
+
+@settings_bp.route('/api-token', methods=['GET'])
+@login_required
+def api_token_page():
+    """API token management page"""
+    user = get_current_user()
+    return render_template('settings/api_token.html', user=user)
+
+
+@settings_bp.route('/api-token/generate', methods=['POST'])
+@login_required
+def generate_api_token():
+    """Generate new API token"""
+    user = get_current_user()
+
+    try:
+        token = user.generate_api_token()
+        return jsonify({'success': True, 'token': token})
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'Failed to generate API token'})
+
+
+@settings_bp.route('/api-token/revoke', methods=['POST'])
+@login_required
+def revoke_api_token():
+    """Revoke current API token"""
+    user = get_current_user()
+
+    try:
+        user.revoke_api_token()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'Failed to revoke API token'})
