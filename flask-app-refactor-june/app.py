@@ -24,18 +24,34 @@ def create_app(config_name='development'):
     csrf.init_app(app)
 
     # Initialize CORS for API endpoints
-    # In production, set CORS_ORIGINS environment variable to your frontend domain
-    cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": cors_origins,
-            "methods": ["GET", "POST", "PUT", "DELETE"],
-            "allow_headers": ["Content-Type", "X-API-Key"],
-            "expose_headers": ["Content-Type"],
-            "supports_credentials": False,
-            "max_age": 3600
-        }
-    })
+    # SECURITY: Always set CORS_ORIGINS environment variable in production
+    # Never use '*' wildcard in production as it allows any origin
+    cors_origins_env = os.environ.get('CORS_ORIGINS', '')
+
+    # Parse CORS origins, handling both development and production
+    if cors_origins_env:
+        cors_origins = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
+    else:
+        # Development only: allow localhost
+        if app.config.get('DEBUG'):
+            cors_origins = ['http://localhost:3000', 'http://localhost:5000', 'http://127.0.0.1:5000']
+        else:
+            # Production: Require explicit configuration
+            cors_origins = []
+            app.logger.warning('CORS_ORIGINS not configured. API endpoints will reject cross-origin requests.')
+
+    if cors_origins:
+        CORS(app, resources={
+            r"/api/*": {
+                "origins": cors_origins,
+                "methods": ["GET", "POST", "PUT", "DELETE"],
+                "allow_headers": ["Content-Type", "X-API-Key"],
+                "expose_headers": ["Content-Type"],
+                "supports_credentials": False,
+                "allow_private_network": False,  # Security: Explicitly deny private network access
+                "max_age": 3600
+            }
+        })
 
     # Initialize rate limiter
     limiter = Limiter(

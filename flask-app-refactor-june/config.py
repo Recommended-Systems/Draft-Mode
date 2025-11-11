@@ -35,9 +35,11 @@ class Config:
     APP_NAME = 'Draft Mode'
 
     # CORS configuration
-    # Set CORS_ORIGINS environment variable in production (comma-separated list)
+    # SECURITY CRITICAL: Set CORS_ORIGINS environment variable in production
+    # NEVER use wildcard '*' in production - specify exact origins only
     # Example: CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
+    # Leave empty in production to enforce explicit configuration
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '')
 
 class DevelopmentConfig(Config):
     """Development configuration"""
