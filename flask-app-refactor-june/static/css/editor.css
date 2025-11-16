@@ -448,6 +448,18 @@
     border-color: #1e7e34;
 }
 
+.sidebar-button.danger {
+    background: #FAFCFE;
+    color: #C3C3C3;
+    border: 1px solid #E1E4E7;
+}
+
+.sidebar-button.danger:hover {
+    background: var(--accent-red);
+    color: #ffffff;
+    border-color: var(--accent-red);
+}
+
 [data-theme="dark"] .sidebar-button {
     background: #000000;
 }
@@ -456,6 +468,16 @@
 }
 [data-theme="dark"] .sidebar-button.primary {
     color: #000000 !important;
+}
+[data-theme="dark"] .sidebar-button.danger {
+    background: #000000;
+    color: #C3C3C3;
+    border: 1px solid #E1E4E7;
+}
+[data-theme="dark"] .sidebar-button.danger:hover {
+    background: var(--accent-red);
+    color: #ffffff !important;
+    border-color: var(--accent-red);
 }
 
 /* Tag Buttons */

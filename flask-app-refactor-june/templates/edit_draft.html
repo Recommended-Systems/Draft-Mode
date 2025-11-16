@@ -133,6 +133,19 @@ Start typing to see your content come to life..."
                 <div>• > for blockquotes</div>
             </div>
         </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Delete</div>
+            <div class="action-buttons">
+                <button id="deleteVersionBtn" class="sidebar-button danger">
+                    This Version
+                </button>
+
+                <button id="deleteDraftBtn" class="sidebar-button danger">
+                    Whole Draft
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -215,6 +228,32 @@ Start typing to see your content come to life..."
         </div>
         <div class="button-group">
             <button id="closePreview" class="sidebar-button">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="deleteModalTitle">Confirm Deletion</h3>
+            <button class="modal-close" id="closeDeleteModal">✕</button>
+        </div>
+        <div class="delete-warning">
+            <p style="color: var(--accent-red); font-weight: 600; margin-bottom: 12px;">
+                ⚠️ This action cannot be undone!
+            </p>
+            <p id="deleteModalMessage" style="color: var(--text-secondary); font-size: 12px; margin-bottom: 16px; line-height: 1.5;">
+                <!-- Message will be set by JavaScript -->
+            </p>
+            <div class="form-group">
+                <label class="form-label">Type <strong id="deleteConfirmText">DELETE</strong> to confirm:</label>
+                <input type="text" id="deleteConfirmInput" class="form-input" placeholder="Type DELETE to confirm">
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="cancelDelete" class="sidebar-button">Cancel</button>
+            <button id="confirmDelete" class="sidebar-button danger" disabled>Delete</button>
         </div>
     </div>
 </div>

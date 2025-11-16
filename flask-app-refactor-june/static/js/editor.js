@@ -82,12 +82,15 @@ class DraftEditor {
             compareBtn: document.getElementById('compareBtn'),
             shareBtn: document.getElementById('shareBtn'),
             exportBtn: document.getElementById('exportBtn'),
-            
+            deleteVersionBtn: document.getElementById('deleteVersionBtn'),
+            deleteDraftBtn: document.getElementById('deleteDraftBtn'),
+
             // Modals
             newVersionModal: document.getElementById('newVersionModal'),
             compareModal: document.getElementById('compareModal'),
             shareModal: document.getElementById('shareModal'),
             previewModal: document.getElementById('previewModal'),
+            deleteModal: document.getElementById('deleteModal'),
             
             // Modal content
             newVersionName: document.getElementById('newVersionName'),
@@ -95,7 +98,11 @@ class DraftEditor {
             shareLink: document.getElementById('shareLink'),
             shareLinkContainer: document.getElementById('shareLinkContainer'),
             previewContent: document.getElementById('previewContent'),
-            
+            deleteModalTitle: document.getElementById('deleteModalTitle'),
+            deleteModalMessage: document.getElementById('deleteModalMessage'),
+            deleteConfirmInput: document.getElementById('deleteConfirmInput'),
+            confirmDeleteBtn: document.getElementById('confirmDelete'),
+
             // Editor container
             editorContainer: document.getElementById('editorContainer')
         };
@@ -142,7 +149,15 @@ class DraftEditor {
         this.elements.exportBtn.addEventListener('click', () => {
             this.exportMarkdown();
         });
-        
+
+        this.elements.deleteVersionBtn.addEventListener('click', () => {
+            this.showDeleteModal('version');
+        });
+
+        this.elements.deleteDraftBtn.addEventListener('click', () => {
+            this.showDeleteModal('draft');
+        });
+
         // Modal handlers
         this.initModalHandlers();
         
@@ -204,11 +219,30 @@ class DraftEditor {
         document.getElementById('closePreviewModal').addEventListener('click', () => {
             this.hideModal('previewModal');
         });
-        
+
         document.getElementById('closePreview').addEventListener('click', () => {
             this.hideModal('previewModal');
         });
-        
+
+        // Delete Modal
+        document.getElementById('closeDeleteModal').addEventListener('click', () => {
+            this.hideDeleteModal();
+        });
+
+        document.getElementById('cancelDelete').addEventListener('click', () => {
+            this.hideDeleteModal();
+        });
+
+        this.elements.deleteConfirmInput.addEventListener('input', (e) => {
+            // Enable delete button only when "DELETE" is typed
+            const isValid = e.target.value === 'DELETE';
+            this.elements.confirmDeleteBtn.disabled = !isValid;
+        });
+
+        document.getElementById('confirmDelete').addEventListener('click', () => {
+            this.executeDelete();
+        });
+
         // Close modals on outside click
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             modal.addEventListener('click', (e) => {
@@ -547,7 +581,92 @@ class DraftEditor {
         a.click();
         URL.revokeObjectURL(url);
     }
-    
+
+    showDeleteModal(type) {
+        this.deleteType = type;
+
+        if (type === 'version') {
+            this.elements.deleteModalTitle.textContent = 'Delete Version';
+            this.elements.deleteModalMessage.textContent =
+                `Are you sure you want to delete version "${this.data.currentVersion.version_name}"? This will permanently remove this version and cannot be undone.`;
+        } else if (type === 'draft') {
+            this.elements.deleteModalTitle.textContent = 'Delete Draft';
+            this.elements.deleteModalMessage.textContent =
+                `Are you sure you want to delete the entire draft "${this.data.draft.title}"? This will permanently remove the draft and ALL versions. This cannot be undone.`;
+        }
+
+        // Reset confirmation input
+        this.elements.deleteConfirmInput.value = '';
+        this.elements.confirmDeleteBtn.disabled = true;
+
+        this.showModal('deleteModal');
+    }
+
+    hideDeleteModal() {
+        this.hideModal('deleteModal');
+        this.elements.deleteConfirmInput.value = '';
+        this.elements.confirmDeleteBtn.disabled = true;
+        this.deleteType = null;
+    }
+
+    async executeDelete() {
+        if (this.deleteType === 'version') {
+            await this.deleteVersion();
+        } else if (this.deleteType === 'draft') {
+            await this.deleteDraft();
+        }
+    }
+
+    async deleteVersion() {
+        try {
+            const response = await this.secureFetch(`/drafts/versions/${this.data.currentVersionId}/delete`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.hideDeleteModal();
+                // Redirect to draft (which will load another version)
+                window.location.href = `/drafts/${this.data.draftId}`;
+            } else {
+                alert('Failed to delete version: ' + (data.error || 'Unknown error'));
+                this.elements.deleteConfirmInput.value = '';
+                this.elements.confirmDeleteBtn.disabled = true;
+            }
+        } catch (error) {
+            console.error('Error deleting version:', error);
+            alert('Failed to delete version: ' + error.message);
+            this.elements.deleteConfirmInput.value = '';
+            this.elements.confirmDeleteBtn.disabled = true;
+        }
+    }
+
+    async deleteDraft() {
+        try {
+            const response = await this.secureFetch(`/drafts/${this.data.draftId}/delete`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.hideDeleteModal();
+                // Redirect to dashboard
+                window.location.href = '/dashboard';
+            } else {
+                alert('Failed to delete draft: ' + (data.error || 'Unknown error'));
+                this.elements.deleteConfirmInput.value = '';
+                this.elements.confirmDeleteBtn.disabled = true;
+            }
+        } catch (error) {
+            console.error('Error deleting draft:', error);
+            alert('Failed to delete draft: ' + error.message);
+            this.elements.deleteConfirmInput.value = '';
+            this.elements.confirmDeleteBtn.disabled = true;
+        }
+    }
+
     async setVersionTag(tag) {
         try {
             const response = await this.secureFetch(`/drafts/versions/${this.data.currentVersionId}/set_tag`, {
