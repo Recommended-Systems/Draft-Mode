@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diff Demo - Standalone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #58a6ff;
+        }
+
+        .controls {
+            background: #161b22;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        select, button {
+            padding: 8px 12px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            background: #238636;
+            border-color: #238636;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        #diffContainer {
+            display: none;
+        }
+
+        .stats-container {
+            background: #161b22;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .stat-dot.added { background: #3fb950; }
+        .stat-dot.removed { background: #f85149; }
+        .stat-dot.modified { background: #d29922; }
+        .stat-dot.moved { background: #58a6ff; }
+
+        .diff-panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .diff-panel {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            overflow: auto;
+            max-height: 600px;
+        }
+
+        .panel-header {
+            background: #161b22;
+            padding: 10px 15px;
+            border-bottom: 1px solid #30363d;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .panel-content {
+            padding: 10px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .diff-line {
+            display: flex;
+            padding: 2px 0;
+            border-left: 4px solid transparent;
+        }
+
+        .line-number {
+            min-width: 50px;
+            padding: 0 10px;
+            color: #6e7681;
+            text-align: right;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .line-content {
+            flex: 1;
+            padding-right: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .diff-unchanged {
+            background: transparent;
+        }
+
+        .diff-added {
+            background: rgba(63, 185, 80, 0.15);
+            border-left-color: #3fb950;
+        }
+
+        .diff-removed {
+            background: rgba(248, 81, 73, 0.15);
+            border-left-color: #f85149;
+        }
+
+        .diff-modified {
+            background: rgba(210, 153, 34, 0.15);
+            border-left-color: #d29922;
+        }
+
+        .diff-moved-out {
+            background: rgba(88, 166, 255, 0.15);
+            border-left-color: #58a6ff;
+            color: #90caf9;
+        }
+
+        .diff-moved-in {
+            background: rgba(88, 166, 255, 0.15);
+            border-left-color: #58a6ff;
+            color: #90caf9;
+        }
+
+        .diff-empty {
+            background: transparent;
+            color: transparent;
+        }
+
+        .word-added {
+            background: rgba(63, 185, 80, 0.4);
+            border-bottom: 2px solid #3fb950;
+            padding: 0 2px;
+        }
+
+        .word-removed {
+            background: rgba(248, 81, 73, 0.4);
+            border-bottom: 2px solid #f85149;
+            text-decoration: line-through;
+            padding: 0 2px;
+        }
+
+        .char-added {
+            background: #3fb950;
+            color: #ffffff;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+
+        .char-removed {
+            background: #f85149;
+            color: #ffffff;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+
+        .loading {
+            padding: 40px;
+            text-align: center;
+            color: #6e7681;
+        }
+
+        @media (max-width: 768px) {
+            .diff-panels {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Improved Diff Demo (Standalone)</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="testCase">Select Test Case:</label>
+                <select id="testCase">
+                    <option value="technical">Technical Blog Post (section reordering, typos)</option>
+                    <option value="creative">Creative Writing (word changes, merging)</option>
+                    <option value="documentation">Documentation (structural changes)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Options:</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="detectMoves" checked>
+                        Detect moved blocks
+                    </label>
+                    <label>
+                        <input type="checkbox" id="ignoreWhitespace" checked>
+                        Ignore whitespace
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="runDiff()">Compare Versions</button>
+        </div>
+
+        <div id="diffContainer">
+            <div class="stats-container">
+                <div class="stat-item">
+                    <span class="stat-dot added"></span>
+                    <span id="addedCount">0 additions</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-dot removed"></span>
+                    <span id="removedCount">0 deletions</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-dot modified"></span>
+                    <span id="modifiedCount">0 modifications</span>
+                </div>
+                <div class="stat-item" id="movedStatsContainer" style="display: none;">
+                    <span class="stat-dot moved"></span>
+                    <span id="movedCount">0 blocks moved</span>
+                </div>
+            </div>
+
+            <div class="diff-panels">
+                <div class="diff-panel">
+                    <div class="panel-header">Version 1 (Original)</div>
+                    <div class="panel-content" id="diffLeft"></div>
+                </div>
+                <div class="diff-panel">
+                    <div class="panel-header">Version 2 (Modified)</div>
+                    <div class="panel-content" id="diffRight"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// ============================================================================
+// EMBEDDED: improved-diff.js
+// ============================================================================
+/**
+ * Improved Diff Comparison System for Draft Mode
+ *
+ * Features:
+ * - Block move detection (recognizes moved paragraphs/sections)
+ * - Smart paragraph matching with fuzzy comparison
+ * - Word and character-level highlighting for modifications
+ * - Intelligent handling of whitespace and formatting
+ * - Code block awareness
+ * - List item tracking
+ */
+
+class ImprovedDiff {
+    constructor(options = {}) {
+        this.options = {
+            // Similarity threshold for matching modified lines (0-1)
+            similarityThreshold: 0.3,
+            // Threshold for detecting moves vs delete+add
+            moveDetectionThreshold: 0.8,
+            // Whether to ignore leading/trailing whitespace
+            ignoreWhitespace: true,
+            // Whether to detect moved blocks
+            detectMoves: true,
+            // Minimum block size for move detection (lines)
+            minMoveBlockSize: 2,
+            ...options
+        };
+    }
+
+    /**
+     * Main diff computation method
+     */
+    computeDiff(text1, text2) {
+        // Normalize line endings
+        text1 = text1.replace(/\r\n/g, '\n');
+        text2 = text2.replace(/\r\n/g, '\n');
+
+        // Split into lines
+        const lines1 = text1.split('\n');
+        const lines2 = text2.split('\n');
+
+        // Compute line-level diff using Myers algorithm
+        const lineDiff = this._computeLineDiff(lines1, lines2);
+
+        // Detect moved blocks if enabled
+        let processedDiff = lineDiff;
+        if (this.options.detectMoves) {
+            processedDiff = this._detectMoves(processedDiff, lines1, lines2);
+        }
+
+        // Process modifications to add word-level detail
+        processedDiff = this._addWordLevelDetail(processedDiff);
+
+        // Calculate statistics
+        const stats = this._calculateStats(processedDiff);
+
+        return {
+            diff: processedDiff,
+            stats: stats
+        };
+    }
+
+    /**
+     * Compute line-level diff using Myers algorithm
+     */
+    _computeLineDiff(lines1, lines2) {
+        const n = lines1.length;
+        const m = lines2.length;
+        const max = n + m;
+
+        // V array for Myers algorithm - initialize with zeros
+        const v = new Array(2 * max + 1).fill(0);
+        const trace = [];
+
+        // Myers diff algorithm
+        for (let d = 0; d <= max; d++) {
+            const currentV = [...v];
+            trace.push(currentV);
+
+            for (let k = -d; k <= d; k += 2) {
+                let x;
+
+                if (k === -d || (k !== d && v[k - 1 + max] < v[k + 1 + max])) {
+                    x = v[k + 1 + max];
+                } else {
+                    x = v[k - 1 + max] + 1;
+                }
+
+                let y = x - k;
+
+                while (x < n && y < m && this._linesEqual(lines1[x], lines2[y])) {
+                    x++;
+                    y++;
+                }
+
+                v[k + max] = x;
+
+                if (x >= n && y >= m) {
+                    // Found the shortest edit script
+                    return this._backtrack(trace, lines1, lines2, d);
+                }
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Backtrack through the Myers algorithm trace to build diff
+     */
+    _backtrack(trace, lines1, lines2, d) {
+        const diff = [];
+        let x = lines1.length;
+        let y = lines2.length;
+        const max = lines1.length + lines2.length;
+
+        for (let step = d; step >= 0; step--) {
+            const v = trace[step];
+            const k = x - y;
+
+            const prevK = (k === -step || (k !== step && v[k - 1 + max] < v[k + 1 + max]))
+                ? k + 1
+                : k - 1;
+
+            const prevX = v[prevK + max];
+            const prevY = prevX - prevK;
+
+            // Diagonal moves (no change)
+            while (x > prevX && y > prevY) {
+                if (x > 0 && y >= 0 && lines1[x - 1] !== undefined && lines2[y - 1] !== undefined) {
+                    diff.unshift({
+                        type: 'unchanged',
+                        oldLine: x - 1,
+                        newLine: y - 1,
+                        line1: lines1[x - 1],
+                        line2: lines2[y - 1]
+                    });
+                }
+                x--;
+                y--;
+            }
+
+            // Horizontal move (deletion)
+            if (x > prevX) {
+                if (x > 0 && lines1[x - 1] !== undefined) {
+                    diff.unshift({
+                        type: 'removed',
+                        oldLine: x - 1,
+                        newLine: null,
+                        line1: lines1[x - 1],
+                        line2: ''
+                    });
+                }
+                x--;
+            }
+            // Vertical move (addition)
+            else if (y > prevY) {
+                if (y > 0 && lines2[y - 1] !== undefined) {
+                    diff.unshift({
+                        type: 'added',
+                        oldLine: null,
+                        newLine: y - 1,
+                        line1: '',
+                        line2: lines2[y - 1]
+                    });
+                }
+                y--;
+            }
+        }
+
+        return diff;
+    }
+
+    /**
+     * Check if two lines are equal (with options like ignoring whitespace)
+     */
+    _linesEqual(line1, line2) {
+        if (this.options.ignoreWhitespace) {
+            return line1.trim() === line2.trim();
+        }
+        return line1 === line2;
+    }
+
+    /**
+     * Detect moved blocks in the diff
+     */
+    _detectMoves(diff, lines1, lines2) {
+        const result = [];
+        const deletedBlocks = [];
+        const addedBlocks = [];
+
+        // Collect consecutive deleted and added blocks
+        let currentDeleted = [];
+        let currentAdded = [];
+
+        for (const item of diff) {
+            if (item.type === 'removed') {
+                if (currentAdded.length > 0) {
+                    addedBlocks.push([...currentAdded]);
+                    currentAdded = [];
+                }
+                currentDeleted.push(item);
+            } else if (item.type === 'added') {
+                if (currentDeleted.length > 0) {
+                    deletedBlocks.push([...currentDeleted]);
+                    currentDeleted = [];
+                }
+                currentAdded.push(item);
+            } else {
+                if (currentDeleted.length > 0) {
+                    deletedBlocks.push([...currentDeleted]);
+                    currentDeleted = [];
+                }
+                if (currentAdded.length > 0) {
+                    addedBlocks.push([...currentAdded]);
+                    currentAdded = [];
+                }
+            }
+        }
+
+        // Add remaining blocks
+        if (currentDeleted.length > 0) deletedBlocks.push(currentDeleted);
+        if (currentAdded.length > 0) addedBlocks.push(currentAdded);
+
+        // Find matching blocks (potential moves)
+        const matchedDeleted = new Set();
+        const matchedAdded = new Set();
+        const moves = [];
+
+        for (let i = 0; i < deletedBlocks.length; i++) {
+            if (matchedDeleted.has(i)) continue;
+            if (deletedBlocks[i].length < this.options.minMoveBlockSize) continue;
+
+            for (let j = 0; j < addedBlocks.length; j++) {
+                if (matchedAdded.has(j)) continue;
+                if (addedBlocks[j].length !== deletedBlocks[i].length) continue;
+
+                const similarity = this._blockSimilarity(deletedBlocks[i], addedBlocks[j]);
+
+                if (similarity >= this.options.moveDetectionThreshold) {
+                    moves.push({
+                        deletedIndex: i,
+                        addedIndex: j,
+                        deletedBlock: deletedBlocks[i],
+                        addedBlock: addedBlocks[j],
+                        similarity: similarity
+                    });
+                    matchedDeleted.add(i);
+                    matchedAdded.add(j);
+                    break;
+                }
+            }
+        }
+
+        // Rebuild diff with move information
+        let deletedIdx = 0;
+        let addedIdx = 0;
+        const moveMap = new Map();
+
+        for (const move of moves) {
+            moveMap.set(move.deletedIndex, 'deleted');
+            moveMap.set(move.addedIndex, 'added');
+        }
+
+        for (const item of diff) {
+            if (item.type === 'removed') {
+                const blockIdx = this._findBlockIndex(deletedBlocks, deletedIdx);
+                if (moveMap.get(blockIdx) === 'deleted') {
+                    result.push({ ...item, type: 'moved-out' });
+                } else {
+                    result.push(item);
+                }
+                deletedIdx++;
+            } else if (item.type === 'added') {
+                const blockIdx = this._findBlockIndex(addedBlocks, addedIdx);
+                if (moveMap.get(blockIdx) === 'added') {
+                    result.push({ ...item, type: 'moved-in' });
+                } else {
+                    result.push(item);
+                }
+                addedIdx++;
+            } else {
+                result.push(item);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Calculate similarity between two blocks
+     */
+    _blockSimilarity(block1, block2) {
+        if (block1.length !== block2.length) return 0;
+
+        let totalSimilarity = 0;
+        for (let i = 0; i < block1.length; i++) {
+            const line1 = block1[i].line1;
+            const line2 = block2[i].line2;
+            totalSimilarity += this._lineSimilarity(line1, line2);
+        }
+
+        return totalSimilarity / block1.length;
+    }
+
+    /**
+     * Find which block contains a given item index
+     */
+    _findBlockIndex(blocks, itemIdx) {
+        let count = 0;
+        for (let i = 0; i < blocks.length; i++) {
+            count += blocks[i].length;
+            if (itemIdx < count) return i;
+        }
+        return -1;
+    }
+
+    /**
+     * Add word-level detail to modified lines
+     */
+    _addWordLevelDetail(diff) {
+        const result = [];
+
+        for (let i = 0; i < diff.length; i++) {
+            const item = diff[i];
+
+            // Check if next item could be a modification (removed + added)
+            if (item.type === 'removed' && i + 1 < diff.length) {
+                const nextItem = diff[i + 1];
+
+                if (nextItem.type === 'added') {
+                    const similarity = this._lineSimilarity(item.line1, nextItem.line2);
+
+                    if (similarity >= this.options.similarityThreshold) {
+                        // This is a modification, compute word-level diff
+                        const wordDiff = this._computeWordDiff(item.line1, nextItem.line2);
+
+                        result.push({
+                            type: 'modified',
+                            oldLine: item.oldLine,
+                            newLine: nextItem.newLine,
+                            line1: item.line1,
+                            line2: nextItem.line2,
+                            leftDiff: wordDiff.left,
+                            rightDiff: wordDiff.right
+                        });
+
+                        i++; // Skip next item as we've processed it
+                        continue;
+                    }
+                }
+            }
+
+            result.push(item);
+        }
+
+        return result;
+    }
+
+    /**
+     * Compute word-level diff between two lines
+     */
+    _computeWordDiff(line1, line2) {
+        // Split by words but keep whitespace
+        const words1 = line1.split(/(\s+)/);
+        const words2 = line2.split(/(\s+)/);
+
+        // If lines are too different, use character-level diff
+        if (Math.abs(words1.length - words2.length) > Math.max(words1.length, words2.length) * 0.5) {
+            return this._computeCharDiff(line1, line2);
+        }
+
+        // Compute LCS for words
+        const lcs = this._computeLCS(words1, words2);
+
+        let left = '';
+        let right = '';
+        let i = 0, j = 0;
+
+        for (const item of lcs) {
+            // Add removed words
+            while (i < item.i) {
+                left += `<span class="word-removed">${this._escapeHtml(words1[i])}</span>`;
+                i++;
+            }
+
+            // Add added words
+            while (j < item.j) {
+                right += `<span class="word-added">${this._escapeHtml(words2[j])}</span>`;
+                j++;
+            }
+
+            // Add unchanged word
+            left += this._escapeHtml(words1[i]);
+            right += this._escapeHtml(words2[j]);
+            i++;
+            j++;
+        }
+
+        // Add remaining words
+        while (i < words1.length) {
+            left += `<span class="word-removed">${this._escapeHtml(words1[i])}</span>`;
+            i++;
+        }
+
+        while (j < words2.length) {
+            right += `<span class="word-added">${this._escapeHtml(words2[j])}</span>`;
+            j++;
+        }
+
+        return { left, right };
+    }
+
+    /**
+     * Compute character-level diff between two lines
+     */
+    _computeCharDiff(line1, line2) {
+        const chars1 = line1.split('');
+        const chars2 = line2.split('');
+
+        const lcs = this._computeLCS(chars1, chars2);
+
+        let left = '';
+        let right = '';
+        let i = 0, j = 0;
+        let leftBuffer = '';
+        let rightBuffer = '';
+
+        for (const item of lcs) {
+            // Collect removed characters
+            while (i < item.i) {
+                leftBuffer += this._escapeHtml(chars1[i]);
+                i++;
+            }
+
+            if (leftBuffer) {
+                left += `<span class="char-removed">${leftBuffer}</span>`;
+                leftBuffer = '';
+            }
+
+            // Collect added characters
+            while (j < item.j) {
+                rightBuffer += this._escapeHtml(chars2[j]);
+                j++;
+            }
+
+            if (rightBuffer) {
+                right += `<span class="char-added">${rightBuffer}</span>`;
+                rightBuffer = '';
+            }
+
+            // Add unchanged character
+            left += this._escapeHtml(chars1[i]);
+            right += this._escapeHtml(chars2[j]);
+            i++;
+            j++;
+        }
+
+        // Add remaining characters
+        while (i < chars1.length) {
+            leftBuffer += this._escapeHtml(chars1[i]);
+            i++;
+        }
+
+        if (leftBuffer) {
+            left += `<span class="char-removed">${leftBuffer}</span>`;
+        }
+
+        while (j < chars2.length) {
+            rightBuffer += this._escapeHtml(chars2[j]);
+            j++;
+        }
+
+        if (rightBuffer) {
+            right += `<span class="char-added">${rightBuffer}</span>`;
+        }
+
+        return { left, right };
+    }
+
+    /**
+     * Compute Longest Common Subsequence
+     */
+    _computeLCS(arr1, arr2) {
+        const n = arr1.length;
+        const m = arr2.length;
+        const dp = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0));
+
+        // Build LCS table
+        for (let i = 1; i <= n; i++) {
+            for (let j = 1; j <= m; j++) {
+                if (arr1[i - 1] === arr2[j - 1]) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                } else {
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+        }
+
+        // Backtrack to find LCS
+        const lcs = [];
+        let i = n, j = m;
+
+        while (i > 0 && j > 0) {
+            if (arr1[i - 1] === arr2[j - 1]) {
+                lcs.unshift({ i: i - 1, j: j - 1 });
+                i--;
+                j--;
+            } else if (dp[i - 1][j] > dp[i][j - 1]) {
+                i--;
+            } else {
+                j--;
+            }
+        }
+
+        return lcs;
+    }
+
+    /**
+     * Calculate line similarity using Levenshtein distance
+     */
+    _lineSimilarity(line1, line2) {
+        if (!line1 || !line2) return 0;
+
+        // Normalize lines
+        const norm1 = line1.trim().toLowerCase();
+        const norm2 = line2.trim().toLowerCase();
+
+        if (norm1 === norm2) return 1;
+
+        const distance = this._levenshteinDistance(norm1, norm2);
+        const maxLen = Math.max(norm1.length, norm2.length);
+
+        return maxLen === 0 ? 1 : (maxLen - distance) / maxLen;
+    }
+
+    /**
+     * Calculate Levenshtein distance
+     */
+    _levenshteinDistance(str1, str2) {
+        const m = str1.length;
+        const n = str2.length;
+        const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+        for (let i = 0; i <= m; i++) dp[i][0] = i;
+        for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                if (str1[i - 1] === str2[j - 1]) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = 1 + Math.min(
+                        dp[i - 1][j],     // deletion
+                        dp[i][j - 1],     // insertion
+                        dp[i - 1][j - 1]  // substitution
+                    );
+                }
+            }
+        }
+
+        return dp[m][n];
+    }
+
+    /**
+     * Calculate statistics from diff
+     */
+    _calculateStats(diff) {
+        const stats = {
+            additions: 0,
+            deletions: 0,
+            modifications: 0,
+            moves: 0,
+            unchanged: 0
+        };
+
+        for (const item of diff) {
+            switch (item.type) {
+                case 'added':
+                    stats.additions++;
+                    break;
+                case 'removed':
+                    stats.deletions++;
+                    break;
+                case 'modified':
+                    stats.modifications++;
+                    break;
+                case 'moved-in':
+                case 'moved-out':
+                    stats.moves++;
+                    break;
+                case 'unchanged':
+                    stats.unchanged++;
+                    break;
+            }
+        }
+
+        return stats;
+    }
+
+    /**
+     * Render diff to HTML
+     */
+    renderToHTML(diffResult) {
+        let leftHTML = '';
+        let rightHTML = '';
+        let leftLineNum = 1;
+        let rightLineNum = 1;
+
+        for (const item of diffResult.diff) {
+            let leftClass = 'diff-line';
+            let rightClass = 'diff-line';
+            let leftContent = '';
+            let rightContent = '';
+            let leftNum = '';
+            let rightNum = '';
+
+            switch (item.type) {
+                case 'unchanged':
+                    leftClass += ' diff-unchanged';
+                    rightClass += ' diff-unchanged';
+                    leftNum = leftLineNum;
+                    rightNum = rightLineNum;
+                    leftContent = this._escapeHtml(item.line1);
+                    rightContent = this._escapeHtml(item.line2);
+                    leftLineNum++;
+                    rightLineNum++;
+                    break;
+
+                case 'removed':
+                    leftClass += ' diff-removed';
+                    rightClass += ' diff-empty';
+                    leftNum = leftLineNum;
+                    rightNum = '&nbsp;';
+                    leftContent = this._escapeHtml(item.line1);
+                    rightContent = '&nbsp;';
+                    leftLineNum++;
+                    break;
+
+                case 'added':
+                    leftClass += ' diff-empty';
+                    rightClass += ' diff-added';
+                    leftNum = '&nbsp;';
+                    rightNum = rightLineNum;
+                    leftContent = '&nbsp;';
+                    rightContent = this._escapeHtml(item.line2);
+                    rightLineNum++;
+                    break;
+
+                case 'modified':
+                    leftClass += ' diff-modified';
+                    rightClass += ' diff-modified';
+                    leftNum = leftLineNum;
+                    rightNum = rightLineNum;
+                    leftContent = item.leftDiff;
+                    rightContent = item.rightDiff;
+                    leftLineNum++;
+                    rightLineNum++;
+                    break;
+
+                case 'moved-out':
+                    leftClass += ' diff-moved-out';
+                    rightClass += ' diff-empty';
+                    leftNum = leftLineNum;
+                    rightNum = '&nbsp;';
+                    leftContent = '↗️ ' + this._escapeHtml(item.line1);
+                    rightContent = '&nbsp;';
+                    leftLineNum++;
+                    break;
+
+                case 'moved-in':
+                    leftClass += ' diff-empty';
+                    rightClass += ' diff-moved-in';
+                    leftNum = '&nbsp;';
+                    rightNum = rightLineNum;
+                    leftContent = '&nbsp;';
+                    rightContent = '↙️ ' + this._escapeHtml(item.line2);
+                    rightLineNum++;
+                    break;
+            }
+
+            // Build the HTML for this line
+            leftHTML += `<div class="${leftClass}"><span class="line-number">${leftNum}</span><span class="line-content">${leftContent}</span></div>\n`;
+            rightHTML += `<div class="${rightClass}"><span class="line-number">${rightNum}</span><span class="line-content">${rightContent}</span></div>\n`;
+        }
+
+        return {
+            left: leftHTML,
+            right: rightHTML,
+            stats: diffResult.stats
+        };
+    }
+
+    /**
+     * Escape HTML entities
+     */
+    _escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Export for use in browser
+if (typeof window !== 'undefined') {
+    window.ImprovedDiff = ImprovedDiff;
+}
+
+// Export for Node.js
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ImprovedDiff;
+}
+
+
+// ============================================================================
+// TEST DATA
+// ============================================================================
+const TEST_DATA = {
+  "technical": {
+    "v1": "# Building Scalable Web Applications\n\n## Introduction\n\nBuilding web applications that scale is one of the most challanging aspects of modern software development. Many develpoers struggle with performance issues as their user base grows.\n\n## Database Optimization\n\nOne of the first bottlenecks you'll encounter is database performance. Here are some key strategies:\n\n- Use proper indexing on frequently queried columns\n- Implement connection pooling\n- Consider read replicas for heavy read workloads\n\n## Caching Strategies\n\nCaching is essential for scalability. Redis and Memcached are popular choices. You should cache:\n\n1. Database query results\n2. Rendered HTML fragments\n3. API responses\n\n## Load Balancing\n\nLoad balancing distributes traffic accross multiple servers. This prevents any single server from becoming overloaded.\n\n### Types of Load Balancers\n\nThere are several types to consider:\n\n- **Round Robin**: Distributes requests evenly\n- **Least Connections**: Sends to server with fewest active connections\n- **IP Hash**: Routes based on client IP address\n\n## Monitoring and Metrics\n\nYou can't improve what you don't measure. Implementing comprehensive monitoring is crucial.\n\nKey metrics to track:\n- Response time\n- Error rates\n- CPU and memory usage\n- Database query performance\n\n## Conclusion\n\nScalability requiers careful planning and continous optimization. Start with these fundamentals and iterate based on real-world usage patterns.\n",
+    "v2": "# Building Scalable Web Applications\n\n## Introduction\n\nBuilding web applications that scale is one of the most challenging aspects of modern software development. Many developers struggle with performance issues as their user base grows. This guide will walk you through the essential strategies for building applications that can handle millions of users.\n\n## Monitoring and Metrics\n\nYou can't improve what you don't measure. Implementing comprehensive monitoring should be your first priority, not your last.\n\nKey metrics to track:\n- Response time and latency percentiles (p50, p95, p99)\n- Error rates and types\n- CPU and memory usage across all services\n- Database query performance and slow query logs\n- Cache hit rates\n\n## Caching Strategies\n\nCaching is absolutely essential for scalability. Redis and Memcached are the most popular choices. You should cache:\n\n1. Database query results (especially expensive joins)\n2. Rendered HTML fragments\n3. API responses\n4. Session data\n\nRemember to set appropriate TTL (Time To Live) values for each cache layer.\n\n## Database Optimization\n\nOne of the first bottlenecks you'll encounter is database performance. Here are some key strategies:\n\n- Use proper indexing on frequently queried columns\n- Implement connection pooling to reduce overhead\n- Consider read replicas for heavy read workloads\n- Partition large tables by date or other logical boundaries\n\n### Query Optimization\n\nAlways use EXPLAIN to analyze query plans. Avoid N+1 queries by using eager loading or batch queries.\n\n## Load Balancing\n\nLoad balancing distributes traffic across multiple servers. This prevents any single server from becoming overloaded and provides redundancy.\n\n### Types of Load Balancers\n\nThere are several types to consider:\n\n- **Round Robin**: Distributes requests evenly across servers\n- **Least Connections**: Sends requests to the server with fewest active connections\n- **IP Hash**: Routes based on client IP address for session persistence\n\n## Conclusion\n\nScalability requires careful planning and continuous optimization. Start with these fundamentals, measure everything, and iterate based on real-world usage patterns. Remember that premature optimization is the root of all evil - focus on actual bottlenecks revealed by your metrics.\n"
+  },
+  "creative": {
+    "v1": "# The Last Train\n\nThe station was nearly empty when Sarah arrived. Only a few late-night travelers sat scattered across the worn wooden benches, their faces illuminated by the harsh fluorescent lights overhead.\n\nShe checked her watch again. 11:47 PM. The last train to Portland would arrive in thirteen minutes. She had been waiting for this moment all day, rehearsing what she would say when she finally saw him again.\n\nThe cold November wind whipped through the open platform, and Sarah pulled her coat tighter around herself.\n\nA voice crackled over the intercom: \"The 12:00 AM train to Portland has been delayed by approximately fifteen minutes. We apologize for any inconvenience.\"\n\nSarah sighed and sat down on the nearest bench. The metal was freezing cold against her legs. She pulled out her phone and stared at the last message from David: \"I'll be on the midnight train. We need to talk.\"\n\nThose five words had been echoing in her mind for hours. \"We need to talk.\" Nothing good ever followed that phrase. She knew what was comming. After three years together, she could read him like a book.\n\nA young mother with a crying baby sat down on the bench across from her. The woman looked exhausted, dark circles under her eyes, trying desperately to soothe the infant.\n\nSarah watched them for a moment, then looked away. She used to imagine having a family with David. Now those dreams seemed foolish and distant.\n\nThe platform began to fill with more people as midnight approached. Business travelers in rumpled suits, college students with overstuffed backpacks, an elderly couple holding hands.\n\nFinally, the distant sound of the train whistle cut through the night air. Sarah stood up, her heart pounding. This was it. In moments, she would see David's face and know the truth.\n\nThe train pulled into the station with a screech of brakes. Doors opened. Passengers began to disembark.\n\nAnd there he was.\n",
+    "v2": "# The Last Train\n\nThe station was nearly deserted when Sarah arrived, just a few late-night travelers scattered across the worn wooden benches, their weary faces illuminated by harsh fluorescent lights.\n\nShe checked her watch again: 11:47 PM. The last train to Portland would arrive in thirteen minutes. She'd been waiting for this moment all day, rehearsing what she would say when she finally saw him.\n\nA voice crackled over the intercom: \"The 12:00 AM train to Portland has been delayed by approximately fifteen minutes. We apologize for any inconvenience.\"\n\nSarah sighed heavily and sat down on the nearest bench, the cold metal biting through her jeans. She pulled out her phone and stared at David's last message: \"I'll be on the midnight train. We need to talk.\"\n\nThose five words had been echoing in her mind all evening. \"We need to talk.\" Nothing good ever came after that phrase. After three years together, she could read him perfectly, and she knew what was coming.\n\nThe cold November wind whipped through the open platform. Sarah pulled her coat tighter, but it did nothing to warm the chill settling in her chest.\n\nA young mother with a crying baby sat down across from her. The woman looked utterly exhausted, dark circles shadowing her eyes as she desperately tried to soothe the infant. Sarah watched them briefly, then looked away, remembering all those times she'd imagined having a family with David. Those dreams seemed foolish now, like they belonged to someone else entirely.\n\nAs midnight approached, the platform filled with more travelers: business people in rumpled suits clutching briefcases, college students with overstuffed backpacks and headphones, an elderly couple holding hands and whispering to each other.\n\nThe distant sound of the train whistle pierced the night. Sarah stood up quickly, her heart hammering against her ribs. This was it.\n\nThe train pulled into the station with a metallic screech. Doors hissed open. Passengers began streaming out onto the platform, a river of tired faces and rolling luggage.\n\nAnd there he was, standing in the doorway of the third car, searching the crowd. When his eyes found hers, Sarah knew immediately that she'd been right about everything.\n"
+  },
+  "documentation": {
+    "v1": "# API Documentation - User Management Service\n\n## Overview\n\nThis service provides endpoints for managing user accounts, authentication, and profiles.\n\n## Authentication\n\nAll endpoints require authentication via Bearer token in the Authorization header.\n\n```\nAuthorization: Bearer YOUR_TOKEN_HERE\n```\n\n## Endpoints\n\n### Create User\n\nCreates a new user account.\n\n**Endpoint:** `POST /api/users`\n\n**Request Body:**\n```json\n{\n  \"username\": \"string\",\n  \"email\": \"string\",\n  \"password\": \"string\"\n}\n```\n\n**Response:**\n```json\n{\n  \"id\": \"integer\",\n  \"username\": \"string\",\n  \"email\": \"string\",\n  \"created_at\": \"timestamp\"\n}\n```\n\n### Get User\n\nRetreive user information by ID.\n\n**Endpoint:** `GET /api/users/:id`\n\n**Response:**\n```json\n{\n  \"id\": \"integer\",\n  \"username\": \"string\",\n  \"email\": \"string\",\n  \"created_at\": \"timestamp\"\n}\n```\n\n### Update User\n\nUpdates user profile information.\n\n**Endpoint:** `PUT /api/users/:id`\n\n**Request Body:**\n```json\n{\n  \"username\": \"string\",\n  \"email\": \"string\"\n}\n```\n\n### Delete User\n\nDeletes a user account permanently.\n\n**Endpoint:** `DELETE /api/users/:id`\n\n**Response:**\n```json\n{\n  \"success\": true\n}\n```\n\n## Error Codes\n\n- `400` - Bad Request: Invalid input data\n- `401` - Unauthorized: Missing or invalid token\n- `404` - Not Found: User does not exist\n- `500` - Internal Server Error: Something went wrong\n\n## Rate Limiting\n\nAPI requests are limited to 100 requests per hour per user.\n\n## Examples\n\n### Creating a user with cURL:\n\n```bash\ncurl -X POST https://api.example.com/api/users \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"username\":\"john\",\"email\":\"john@example.com\",\"password\":\"secret123\"}'\n```\n\n## Best Practices\n\n- Always validate input on the client side\n- Store tokens securly\n- Use HTTPS for all requests\n- Implement proper error handling\n",
+    "v2": "# API Documentation - User Management Service v2.0\n\n## Overview\n\nThis service provides comprehensive endpoints for managing user accounts, authentication, authorization, and user profiles.\n\n**Base URL:** `https://api.example.com/v2`\n\n## Authentication\n\nAll endpoints require authentication via Bearer token in the Authorization header:\n\n```\nAuthorization: Bearer YOUR_TOKEN_HERE\n```\n\nTokens expire after 24 hours and must be refreshed using the `/auth/refresh` endpoint.\n\n## Rate Limiting\n\nAPI requests are limited to:\n- 100 requests per hour for standard users\n- 1000 requests per hour for premium users\n- 10000 requests per hour for enterprise customers\n\nRate limit information is included in response headers:\n- `X-RateLimit-Limit`: Maximum requests allowed\n- `X-RateLimit-Remaining`: Requests remaining in current window\n- `X-RateLimit-Reset`: Time when the rate limit resets (Unix timestamp)\n\n## Endpoints\n\n### Create User\n\nCreates a new user account with email verification.\n\n**Endpoint:** `POST /api/users`\n\n**Request Body:**\n```json\n{\n  \"username\": \"string (3-30 characters)\",\n  \"email\": \"string (valid email format)\",\n  \"password\": \"string (minimum 8 characters)\",\n  \"full_name\": \"string (optional)\"\n}\n```\n\n**Response (201 Created):**\n```json\n{\n  \"id\": \"integer\",\n  \"username\": \"string\",\n  \"email\": \"string\",\n  \"full_name\": \"string\",\n  \"email_verified\": false,\n  \"created_at\": \"timestamp\"\n}\n```\n\n### Get User\n\nRetrieve detailed user information by ID.\n\n**Endpoint:** `GET /api/users/:id`\n\n**Response (200 OK):**\n```json\n{\n  \"id\": \"integer\",\n  \"username\": \"string\",\n  \"email\": \"string\",\n  \"full_name\": \"string\",\n  \"email_verified\": \"boolean\",\n  \"created_at\": \"timestamp\",\n  \"updated_at\": \"timestamp\"\n}\n```\n\n### Update User\n\nUpdates user profile information. Only provided fields will be updated.\n\n**Endpoint:** `PATCH /api/users/:id`\n\n**Request Body:**\n```json\n{\n  \"username\": \"string (optional)\",\n  \"email\": \"string (optional)\",\n  \"full_name\": \"string (optional)\"\n}\n```\n\n**Response (200 OK):**\n```json\n{\n  \"id\": \"integer\",\n  \"username\": \"string\",\n  \"email\": \"string\",\n  \"full_name\": \"string\",\n  \"updated_at\": \"timestamp\"\n}\n```\n\n### Delete User\n\nPermanently deletes a user account. This action cannot be undone.\n\n**Endpoint:** `DELETE /api/users/:id`\n\n**Response (204 No Content):**\n```json\n{}\n```\n\n## Error Responses\n\nAll errors follow this format:\n\n```json\n{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": \"object (optional)\"\n  }\n}\n```\n\n### HTTP Status Codes\n\n- `400` - Bad Request: Invalid or missing input data\n- `401` - Unauthorized: Missing or invalid authentication token\n- `403` - Forbidden: Authenticated but not authorized for this action\n- `404` - Not Found: Requested user does not exist\n- `429` - Too Many Requests: Rate limit exceeded\n- `500` - Internal Server Error: Something went wrong on our end\n\n## Examples\n\n### Creating a user with cURL:\n\n```bash\ncurl -X POST https://api.example.com/v2/api/users \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_TOKEN\" \\\n  -d '{\n    \"username\": \"john_doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"SecurePass123!\",\n    \"full_name\": \"John Doe\"\n  }'\n```\n\n### Updating a user with Python:\n\n```python\nimport requests\n\nheaders = {\n    \"Authorization\": \"Bearer YOUR_TOKEN\",\n    \"Content-Type\": \"application/json\"\n}\n\ndata = {\n    \"full_name\": \"John Smith\"\n}\n\nresponse = requests.patch(\n    \"https://api.example.com/v2/api/users/123\",\n    headers=headers,\n    json=data\n)\n\nprint(response.json())\n```\n\n## Best Practices\n\n- Always use HTTPS for all API requests\n- Validate input on both client and server side\n- Store tokens securely (never in local storage for web apps)\n- Implement proper error handling and retry logic with exponential backoff\n- Cache responses when appropriate to reduce API calls\n- Use webhook notifications instead of polling when possible\n\n## Changelog\n\n### Version 2.0 (Current)\n- Changed Update endpoint from PUT to PATCH\n- Added full_name field to user model\n- Added email_verified status\n- Improved rate limiting with tiered access\n- Enhanced error response format\n"
+  }
+};
+
+// ============================================================================
+// DEMO FUNCTIONALITY
+// ============================================================================
+function runDiff() {
+    const testCase = document.getElementById('testCase').value;
+    const detectMoves = document.getElementById('detectMoves').checked;
+    const ignoreWhitespace = document.getElementById('ignoreWhitespace').checked;
+
+    const text1 = TEST_DATA[testCase].v1;
+    const text2 = TEST_DATA[testCase].v2;
+
+    console.log('Text1 length:', text1.length, 'Text2 length:', text2.length);
+
+    document.getElementById('diffContainer').style.display = 'block';
+
+    const loadingHTML = '<div class="loading">Computing diff...<br><small>Analyzing changes</small></div>';
+    document.getElementById('diffLeft').innerHTML = loadingHTML;
+    document.getElementById('diffRight').innerHTML = loadingHTML;
+
+    setTimeout(() => {
+        const differ = new ImprovedDiff({
+            similarityThreshold: 0.3,
+            moveDetectionThreshold: 0.85,
+            ignoreWhitespace: ignoreWhitespace,
+            detectMoves: detectMoves,
+            minMoveBlockSize: 2
+        });
+
+        console.time('Diff computation');
+        const diffResult = differ.computeDiff(text1, text2);
+        console.timeEnd('Diff computation');
+
+        console.log('Diff result:', diffResult);
+        console.log('Stats:', diffResult.stats);
+        console.log('Diff array length:', diffResult.diff ? diffResult.diff.length : 'undefined');
+        if (diffResult.diff && diffResult.diff.length > 0) {
+            console.log('First diff item:', diffResult.diff[0]);
+            console.log('Last diff item:', diffResult.diff[diffResult.diff.length - 1]);
+        }
+
+        const rendered = differ.renderToHTML(diffResult);
+
+        console.log('Left HTML length:', rendered.left.length, 'Right HTML length:', rendered.right.length);
+
+        document.getElementById('diffLeft').innerHTML = rendered.left;
+        document.getElementById('diffRight').innerHTML = rendered.right;
+
+        const stats = diffResult.stats;
+        document.getElementById('addedCount').textContent = `${stats.additions} addition${stats.additions !== 1 ? 's' : ''}`;
+        document.getElementById('removedCount').textContent = `${stats.deletions} deletion${stats.deletions !== 1 ? 's' : ''}`;
+        document.getElementById('modifiedCount').textContent = `${stats.modifications} modification${stats.modifications !== 1 ? 's' : ''}`;
+
+        if (stats.moves > 0) {
+            document.getElementById('movedStatsContainer').style.display = 'flex';
+            document.getElementById('movedCount').textContent = `${Math.floor(stats.moves / 2)} block${stats.moves !== 2 ? 's' : ''} moved`;
+        } else {
+            document.getElementById('movedStatsContainer').style.display = 'none';
+        }
+
+        // Synchronized scrolling
+        const leftPanel = document.querySelector('.diff-panel:nth-child(1) .panel-content');
+        const rightPanel = document.querySelector('.diff-panel:nth-child(2) .panel-content');
+
+        leftPanel.onscroll = () => {
+            rightPanel.scrollTop = leftPanel.scrollTop;
+        };
+
+        rightPanel.onscroll = () => {
+            leftPanel.scrollTop = rightPanel.scrollTop;
+        };
+    }, 100);
+}
+
+console.log('✅ Demo ready! Select a test case and click "Compare Versions"');
+    </script>
+</body>
+</html>

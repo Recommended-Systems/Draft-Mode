@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Improved Diff Demo - Draft Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .controls {
+            background: #2a2a2a;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        select, button {
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        select {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .diff-container {
+            background: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #4CAF50;
+        }
+
+        .diff-header {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-bottom: 2px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .diff-header h2 {
+            color: #4CAF50;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .diff-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .stat-dot.added { background: #3fb950; }
+        .stat-dot.removed { background: #f85149; }
+        .stat-dot.modified { background: #d29922; }
+        .stat-dot.moved { background: #58a6ff; }
+
+        .side-headers {
+            display: flex;
+            background: #1a1a1a;
+            border-bottom: 1px solid #4CAF50;
+        }
+
+        .side-header {
+            flex: 1;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4CAF50;
+        }
+
+        .side-header.older {
+            border-right: 1px solid #4CAF50;
+        }
+
+        .diff-content {
+            display: flex;
+            min-height: 500px;
+            position: relative;
+        }
+
+        .diff-content::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #4CAF50;
+            z-index: 1;
+        }
+
+        .diff-side {
+            flex: 1;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .diff-line {
+            padding: 4px 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 20px;
+            display: block;
+        }
+
+        .line-number {
+            display: inline-block;
+            min-width: 40px;
+            padding-right: 10px;
+            color: #666;
+            font-size: 10px;
+            text-align: right;
+            user-select: none;
+        }
+
+        .line-content {
+            display: inline;
+        }
+
+        .diff-removed {
+            background: #2d1117;
+            border-left: 3px solid #f85149;
+            color: #f0f6fc;
+        }
+
+        .diff-added {
+            background: #0d1117;
+            border-left: 3px solid #3fb950;
+            color: #f0f6fc;
+        }
+
+        .diff-modified {
+            background: #1c1810;
+            border-left: 3px solid #d29922;
+            color: #f0f6fc;
+        }
+
+        .diff-unchanged {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .diff-moved-out {
+            background: #1a1d2e;
+            border-left: 3px solid #58a6ff;
+            color: #90caf9;
+        }
+
+        .diff-moved-in {
+            background: #1a1d2e;
+            border-left: 3px solid #58a6ff;
+            color: #90caf9;
+        }
+
+        .diff-empty {
+            background: #0a0a0a;
+            color: transparent;
+        }
+
+        .word-added, .char-added {
+            background: #3fb950;
+            color: #0d1117;
+            padding: 2px 3px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+
+        .word-removed, .char-removed {
+            background: #f85149;
+            color: #0d1117;
+            padding: 2px 3px;
+            border-radius: 2px;
+            text-decoration: line-through;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: #2a2a2a;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .diff-content {
+                flex-direction: column;
+            }
+
+            .diff-content::before {
+                display: none;
+            }
+
+            .side-header.older {
+                border-right: none;
+                border-bottom: 1px solid #4CAF50;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Improved Diff System Demo</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="testCase">Select Test Case:</label>
+                <select id="testCase">
+                    <option value="technical">Technical Blog Post (Section Reordering + Typos + Expansions)</option>
+                    <option value="creative">Creative Writing (Paragraph Merging + Word Substitutions)</option>
+                    <option value="documentation">Documentation (Structural Changes + Code Blocks)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="detectMoves" checked>
+                    Detect Moved Blocks
+                </label>
+                <label>
+                    <input type="checkbox" id="ignoreWhitespace" checked>
+                    Ignore Whitespace Changes
+                </label>
+            </div>
+            <button onclick="runDiff()">Compare Versions</button>
+        </div>
+
+        <div id="diffContainer" style="display: none;">
+            <div class="diff-container">
+                <div class="diff-header">
+                    <h2 id="diffTitle">Comparison Results</h2>
+                    <div class="diff-stats">
+                        <div class="stat-item">
+                            <div class="stat-dot added"></div>
+                            <span id="addedCount">0 additions</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-dot removed"></div>
+                            <span id="removedCount">0 deletions</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-dot modified"></div>
+                            <span id="modifiedCount">0 modifications</span>
+                        </div>
+                        <div class="stat-item" id="movedStatsContainer" style="display: none;">
+                            <div class="stat-dot moved"></div>
+                            <span id="movedCount">0 moved</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-headers">
+                    <div class="side-header older">Original Version</div>
+                    <div class="side-header">Updated Version</div>
+                </div>
+
+                <div class="diff-content">
+                    <div class="diff-side" id="diffLeft"></div>
+                    <div class="diff-side" id="diffRight"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>🎯 Improved Features</h3>
+            <ul>
+                <li>Block move detection - Recognizes when entire paragraphs/sections are moved</li>
+                <li>Smart paragraph matching - Matches similar lines even with moderate changes</li>
+                <li>Word and character-level highlighting - Shows exactly what changed within lines</li>
+                <li>Intelligent whitespace handling - Ignores insignificant formatting changes</li>
+                <li>Myers diff algorithm - The same algorithm used by Git for accurate diffs</li>
+                <li>Performance optimized - Fast even on large documents</li>
+                <li>Synchronized scrolling - Both panels scroll together for easy comparison</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="../static/js/improved-diff.js"></script>
+    <script>
+        // Test samples will be loaded from files
+        const testSamples = {
+            technical: { v1: null, v2: null },
+            creative: { v1: null, v2: null },
+            documentation: { v1: null, v2: null }
+        };
+
+        // Load test files
+        async function loadTestFile(type, version) {
+            const response = await fetch(`diff_samples/${type}_${version}.md`);
+            return await response.text();
+        }
+
+        async function loadAllTests() {
+            for (const type of ['technical', 'creative', 'documentation']) {
+                testSamples[type].v1 = await loadTestFile(type, 'v1');
+                testSamples[type].v2 = await loadTestFile(type, 'v2');
+            }
+        }
+
+        async function runDiff() {
+            const testCase = document.getElementById('testCase').value;
+            const detectMoves = document.getElementById('detectMoves').checked;
+            const ignoreWhitespace = document.getElementById('ignoreWhitespace').checked;
+
+            // Load tests if not loaded
+            if (!testSamples[testCase].v1) {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading';
+                loadingDiv.textContent = 'Loading test files...';
+                document.getElementById('diffContainer').innerHTML = '';
+                document.getElementById('diffContainer').appendChild(loadingDiv);
+                document.getElementById('diffContainer').style.display = 'block';
+
+                await loadAllTests();
+            }
+
+            const text1 = testSamples[testCase].v1;
+            const text2 = testSamples[testCase].v2;
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.innerHTML = 'Computing diff...<br><small>Analyzing changes with improved algorithm</small>';
+            document.getElementById('diffLeft').innerHTML = '';
+            document.getElementById('diffRight').innerHTML = '';
+            document.getElementById('diffLeft').appendChild(loadingDiv.cloneNode(true));
+            document.getElementById('diffRight').appendChild(loadingDiv.cloneNode(true));
+            document.getElementById('diffContainer').style.display = 'block';
+
+            // Run diff after a short delay to show loading
+            setTimeout(() => {
+                // Create diff instance
+                const differ = new ImprovedDiff({
+                    similarityThreshold: 0.3,
+                    moveDetectionThreshold: 0.85,
+                    ignoreWhitespace: ignoreWhitespace,
+                    detectMoves: detectMoves,
+                    minMoveBlockSize: 2
+                });
+
+                // Compute diff
+                console.time('Diff computation');
+                const diffResult = differ.computeDiff(text1, text2);
+                console.timeEnd('Diff computation');
+
+                console.log('Diff result:', diffResult);
+
+                // Render
+                const rendered = differ.renderToHTML(diffResult);
+
+                // Update DOM
+                document.getElementById('diffLeft').innerHTML = rendered.left;
+                document.getElementById('diffRight').innerHTML = rendered.right;
+
+                // Update stats
+                const stats = diffResult.stats;
+                document.getElementById('addedCount').textContent =
+                    `${stats.additions} addition${stats.additions !== 1 ? 's' : ''}`;
+                document.getElementById('removedCount').textContent =
+                    `${stats.deletions} deletion${stats.deletions !== 1 ? 's' : ''}`;
+                document.getElementById('modifiedCount').textContent =
+                    `${stats.modifications} modification${stats.modifications !== 1 ? 's' : ''}`;
+
+                // Show moved stats if any
+                if (stats.moves > 0) {
+                    document.getElementById('movedStatsContainer').style.display = 'flex';
+                    document.getElementById('movedCount').textContent =
+                        `${Math.floor(stats.moves / 2)} block${stats.moves !== 2 ? 's' : ''} moved`;
+                } else {
+                    document.getElementById('movedStatsContainer').style.display = 'none';
+                }
+
+                // Setup synchronized scrolling
+                const leftPanel = document.getElementById('diffLeft');
+                const rightPanel = document.getElementById('diffRight');
+
+                let leftScrolling = false;
+                let rightScrolling = false;
+
+                leftPanel.addEventListener('scroll', function() {
+                    if (!rightScrolling) {
+                        leftScrolling = true;
+                        rightPanel.scrollTop = leftPanel.scrollTop;
+                        setTimeout(() => leftScrolling = false, 50);
+                    }
+                });
+
+                rightPanel.addEventListener('scroll', function() {
+                    if (!leftScrolling) {
+                        rightScrolling = true;
+                        leftPanel.scrollTop = rightPanel.scrollTop;
+                        setTimeout(() => rightScrolling = false, 50);
+                    }
+                });
+            }, 100);
+        }
+
+        // Load first test on page load
+        window.onload = function() {
+            console.log('Page loaded. Select a test case and click "Compare Versions"');
+        };
+    </script>
+</body>
+</html>

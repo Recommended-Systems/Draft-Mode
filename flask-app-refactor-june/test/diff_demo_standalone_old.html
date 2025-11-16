@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Improved Diff Demo - Draft Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .controls {
+            background: #2a2a2a;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        select, button {
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        select {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .diff-container {
+            background: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #4CAF50;
+        }
+
+        .diff-header {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-bottom: 2px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .diff-header h2 {
+            color: #4CAF50;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .diff-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .stat-dot.added { background: #3fb950; }
+        .stat-dot.removed { background: #f85149; }
+        .stat-dot.modified { background: #d29922; }
+        .stat-dot.moved { background: #58a6ff; }
+
+        .side-headers {
+            display: flex;
+            background: #1a1a1a;
+            border-bottom: 1px solid #4CAF50;
+        }
+
+        .side-header {
+            flex: 1;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4CAF50;
+        }
+
+        .side-header.older {
+            border-right: 1px solid #4CAF50;
+        }
+
+        .diff-content {
+            display: flex;
+            min-height: 500px;
+            position: relative;
+            max-height: 600px;
+        }
+
+        .diff-content::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #4CAF50;
+            z-index: 1;
+        }
+
+        .diff-side {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .diff-line {
+            padding: 4px 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 20px;
+            display: block;
+        }
+
+        .line-number {
+            display: inline-block;
+            min-width: 40px;
+            padding-right: 10px;
+            color: #666;
+            font-size: 10px;
+            text-align: right;
+            user-select: none;
+        }
+
+        .line-content {
+            display: inline;
+        }
+
+        .diff-removed {
+            background: #2d1117;
+            border-left: 3px solid #f85149;
+            color: #f0f6fc;
+        }
+
+        .diff-added {
+            background: #0d1117;
+            border-left: 3px solid #3fb950;
+            color: #f0f6fc;
+        }
+
+        .diff-modified {
+            background: #1c1810;
+            border-left: 3px solid #d29922;
+            color: #f0f6fc;
+        }
+
+        .diff-unchanged {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .diff-moved-out {
+            background: #1a1d2e;
+            border-left: 3px solid #58a6ff;
+            color: #90caf9;
+        }
+
+        .diff-moved-in {
+            background: #1a1d2e;
+            border-left: 3px solid #58a6ff;
+            color: #90caf9;
+        }
+
+        .diff-empty {
+            background: #0a0a0a;
+            color: transparent;
+        }
+
+        .word-added, .char-added {
+            background: #3fb950;
+            color: #0d1117;
+            padding: 2px 3px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+
+        .word-removed, .char-removed {
+            background: #f85149;
+            color: #0d1117;
+            padding: 2px 3px;
+            border-radius: 2px;
+            text-decoration: line-through;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: #2a2a2a;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .diff-content {
+                flex-direction: column;
+            }
+
+            .diff-content::before {
+                display: none;
+            }
+
+            .side-header.older {
+                border-right: none;
+                border-bottom: 1px solid #4CAF50;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Improved Diff System Demo</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="testCase">Select Test Case:</label>
+                <select id="testCase">
+                    <option value="technical">Technical Blog Post (Section Reordering + Typos + Expansions)</option>
+                    <option value="creative">Creative Writing (Paragraph Merging + Word Substitutions)</option>
+                    <option value="documentation">Documentation (Structural Changes + Code Blocks)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="detectMoves" checked>
+                    Detect Moved Blocks
+                </label>
+                <label>
+                    <input type="checkbox" id="ignoreWhitespace" checked>
+                    Ignore Whitespace Changes
+                </label>
+            </div>
+            <button onclick="runDiff()">Compare Versions</button>
+        </div>
+
+        <div id="diffContainer" style="display: none;">
+            <div class="diff-container">
+                <div class="diff-header">
+                    <h2 id="diffTitle">Comparison Results</h2>
+                    <div class="diff-stats">
+                        <div class="stat-item">
+                            <div class="stat-dot added"></div>
+                            <span id="addedCount">0 additions</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-dot removed"></div>
+                            <span id="removedCount">0 deletions</span>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-dot modified"></div>
+                            <span id="modifiedCount">0 modifications</span>
+                        </div>
+                        <div class="stat-item" id="movedStatsContainer" style="display: none;">
+                            <div class="stat-dot moved"></div>
+                            <span id="movedCount">0 moved</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-headers">
+                    <div class="side-header older">Original Version</div>
+                    <div class="side-header">Updated Version</div>
+                </div>
+
+                <div class="diff-content">
+                    <div class="diff-side" id="diffLeft"></div>
+                    <div class="diff-side" id="diffRight"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>🎯 Improved Features</h3>
+            <ul>
+                <li>Block move detection - Recognizes when entire paragraphs/sections are moved</li>
+                <li>Smart paragraph matching - Matches similar lines even with moderate changes</li>
+                <li>Word and character-level highlighting - Shows exactly what changed within lines</li>
+                <li>Intelligent whitespace handling - Ignores insignificant formatting changes</li>
+                <li>Myers diff algorithm - The same algorithm used by Git for accurate diffs</li>
+                <li>Performance optimized - Fast even on large documents</li>
+                <li>Synchronized scrolling - Both panels scroll together for easy comparison</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="../static/js/improved-diff.js"></script>
+    <script>
+        // Embedded test data (no fetch required!)
+        const TEST_DATA = {
+            technical: {
+                v1: `# Building Scalable Web Applications
+
+## Introduction
+
+Building web applications that scale is one of the most challanging aspects of modern software development. Many develpoers struggle with performance issues as their user base grows.
+
+## Database Optimization
+
+One of the first bottlenecks you'll encounter is database performance. Here are some key strategies:
+
+- Use proper indexing on frequently queried columns
+- Implement connection pooling
+- Consider read replicas for heavy read workloads
+
+## Caching Strategies
+
+Caching is essential for scalability. Redis and Memcached are popular choices. You should cache:
+
+1. Database query results
+2. Rendered HTML fragments
+3. API responses
+
+## Load Balancing
+
+Load balancing distributes traffic accross multiple servers. This prevents any single server from becoming overloaded.
+
+### Types of Load Balancers
+
+There are several types to consider:
+
+- **Round Robin**: Distributes requests evenly
+- **Least Connections**: Sends to server with fewest active connections
+- **IP Hash**: Routes based on client IP address
+
+## Monitoring and Metrics
+
+You can't improve what you don't measure. Implementing comprehensive monitoring is crucial.
+
+Key metrics to track:
+- Response time
+- Error rates
+- CPU and memory usage
+- Database query performance
+
+## Conclusion
+
+Scalability requiers careful planning and continous optimization. Start with these fundamentals and iterate based on real-world usage patterns.`,
+                v2: `# Building Scalable Web Applications
+
+## Introduction
+
+Building web applications that scale is one of the most challenging aspects of modern software development. Many developers struggle with performance issues as their user base grows. This guide will walk you through the essential strategies for building applications that can handle millions of users.
+
+## Monitoring and Metrics
+
+You can't improve what you don't measure. Implementing comprehensive monitoring should be your first priority, not your last.
+
+Key metrics to track:
+- Response time and latency percentiles (p50, p95, p99)
+- Error rates and types
+- CPU and memory usage across all services
+- Database query performance and slow query logs
+- Cache hit rates
+
+## Caching Strategies
+
+Caching is absolutely essential for scalability. Redis and Memcached are the most popular choices. You should cache:
+
+1. Database query results (especially expensive joins)
+2. Rendered HTML fragments
+3. API responses
+4. Session data
+
+Remember to set appropriate TTL (Time To Live) values for each cache layer.
+
+## Database Optimization
+
+One of the first bottlenecks you'll encounter is database performance. Here are some key strategies:
+
+- Use proper indexing on frequently queried columns
+- Implement connection pooling to reduce overhead
+- Consider read replicas for heavy read workloads
+- Partition large tables by date or other logical boundaries
+
+### Query Optimization
+
+Always use EXPLAIN to analyze query plans. Avoid N+1 queries by using eager loading or batch queries.
+
+## Load Balancing
+
+Load balancing distributes traffic across multiple servers. This prevents any single server from becoming overloaded and provides redundancy.
+
+### Types of Load Balancers
+
+There are several types to consider:
+
+- **Round Robin**: Distributes requests evenly across servers
+- **Least Connections**: Sends requests to the server with fewest active connections
+- **IP Hash**: Routes based on client IP address for session persistence
+
+## Conclusion
+
+Scalability requires careful planning and continuous optimization. Start with these fundamentals, measure everything, and iterate based on real-world usage patterns. Remember that premature optimization is the root of all evil - focus on actual bottlenecks revealed by your metrics.`
+            },
+            creative: {
+                v1: `# The Last Train
+
+The station was nearly empty when Sarah arrived. Only a few late-night travelers sat scattered across the worn wooden benches, their faces illuminated by the harsh fluorescent lights overhead.
+
+She checked her watch again. 11:47 PM. The last train to Portland would arrive in thirteen minutes. She had been waiting for this moment all day, rehearsing what she would say when she finally saw him again.
+
+The cold November wind whipped through the open platform, and Sarah pulled her coat tighter around herself.
+
+A voice crackled over the intercom: "The 12:00 AM train to Portland has been delayed by approximately fifteen minutes. We apologize for any inconvenience."
+
+Sarah sighed and sat down on the nearest bench. The metal was freezing cold against her legs. She pulled out her phone and stared at the last message from David: "I'll be on the midnight train. We need to talk."
+
+Those five words had been echoing in her mind for hours. "We need to talk." Nothing good ever followed that phrase. She knew what was comming. After three years together, she could read him like a book.
+
+A young mother with a crying baby sat down on the bench across from her. The woman looked exhausted, dark circles under her eyes, trying desperately to soothe the infant.
+
+Sarah watched them for a moment, then looked away. She used to imagine having a family with David. Now those dreams seemed foolish and distant.
+
+The platform began to fill with more people as midnight approached. Business travelers in rumpled suits, college students with overstuffed backpacks, an elderly couple holding hands.
+
+Finally, the distant sound of the train whistle cut through the night air. Sarah stood up, her heart pounding. This was it. In moments, she would see David's face and know the truth.
+
+The train pulled into the station with a screech of brakes. Doors opened. Passengers began to disembark.
+
+And there he was.`,
+                v2: `# The Last Train
+
+The station was nearly deserted when Sarah arrived, just a few late-night travelers scattered across the worn wooden benches, their weary faces illuminated by harsh fluorescent lights.
+
+She checked her watch again: 11:47 PM. The last train to Portland would arrive in thirteen minutes. She'd been waiting for this moment all day, rehearsing what she would say when she finally saw him.
+
+A voice crackled over the intercom: "The 12:00 AM train to Portland has been delayed by approximately fifteen minutes. We apologize for any inconvenience."
+
+Sarah sighed heavily and sat down on the nearest bench, the cold metal biting through her jeans. She pulled out her phone and stared at David's last message: "I'll be on the midnight train. We need to talk."
+
+Those five words had been echoing in her mind all evening. "We need to talk." Nothing good ever came after that phrase. After three years together, she could read him perfectly, and she knew what was coming.
+
+The cold November wind whipped through the open platform. Sarah pulled her coat tighter, but it did nothing to warm the chill settling in her chest.
+
+A young mother with a crying baby sat down across from her. The woman looked utterly exhausted, dark circles shadowing her eyes as she desperately tried to soothe the infant. Sarah watched them briefly, then looked away, remembering all those times she'd imagined having a family with David. Those dreams seemed foolish now, like they belonged to someone else entirely.
+
+As midnight approached, the platform filled with more travelers: business people in rumpled suits clutching briefcases, college students with overstuffed backpacks and headphones, an elderly couple holding hands and whispering to each other.
+
+The distant sound of the train whistle pierced the night. Sarah stood up quickly, her heart hammering against her ribs. This was it.
+
+The train pulled into the station with a metallic screech. Doors hissed open. Passengers began streaming out onto the platform, a river of tired faces and rolling luggage.
+
+And there he was, standing in the doorway of the third car, searching the crowd. When his eyes found hers, Sarah knew immediately that she'd been right about everything.`
+            },
+            documentation: {
+                v1: `# API Documentation - User Management Service
+
+## Overview
+
+This service provides endpoints for managing user accounts, authentication, and profiles.
+
+## Authentication
+
+All endpoints require authentication via Bearer token in the Authorization header.
+
+\`\`\`
+Authorization: Bearer YOUR_TOKEN_HERE
+\`\`\`
+
+## Endpoints
+
+### Create User
+
+Creates a new user account.
+
+**Endpoint:** \`POST /api/users\`
+
+**Request Body:**
+\`\`\`json
+{
+  "username": "string",
+  "email": "string",
+  "password": "string"
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "id": "integer",
+  "username": "string",
+  "email": "string",
+  "created_at": "timestamp"
+}
+\`\`\`
+
+### Get User
+
+Retreive user information by ID.
+
+**Endpoint:** \`GET /api/users/:id\`
+
+**Response:**
+\`\`\`json
+{
+  "id": "integer",
+  "username": "string",
+  "email": "string",
+  "created_at": "timestamp"
+}
+\`\`\`
+
+### Update User
+
+Updates user profile information.
+
+**Endpoint:** \`PUT /api/users/:id\`
+
+**Request Body:**
+\`\`\`json
+{
+  "username": "string",
+  "email": "string"
+}
+\`\`\`
+
+### Delete User
+
+Deletes a user account permanently.
+
+**Endpoint:** \`DELETE /api/users/:id\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true
+}
+\`\`\`
+
+## Error Codes
+
+- \`400\` - Bad Request: Invalid input data
+- \`401\` - Unauthorized: Missing or invalid token
+- \`404\` - Not Found: User does not exist
+- \`500\` - Internal Server Error: Something went wrong
+
+## Rate Limiting
+
+API requests are limited to 100 requests per hour per user.
+
+## Examples
+
+### Creating a user with cURL:
+
+\`\`\`bash
+curl -X POST https://api.example.com/api/users \\
+  -H "Content-Type: application/json" \\
+  -d '{"username":"john","email":"john@example.com","password":"secret123"}'
+\`\`\`
+
+## Best Practices
+
+- Always validate input on the client side
+- Store tokens securly
+- Use HTTPS for all requests
+- Implement proper error handling`,
+                v2: `# API Documentation - User Management Service v2.0
+
+## Overview
+
+This service provides comprehensive endpoints for managing user accounts, authentication, authorization, and user profiles.
+
+**Base URL:** \`https://api.example.com/v2\`
+
+## Authentication
+
+All endpoints require authentication via Bearer token in the Authorization header:
+
+\`\`\`
+Authorization: Bearer YOUR_TOKEN_HERE
+\`\`\`
+
+Tokens expire after 24 hours and must be refreshed using the \`/auth/refresh\` endpoint.
+
+## Rate Limiting
+
+API requests are limited to:
+- 100 requests per hour for standard users
+- 1000 requests per hour for premium users
+- 10000 requests per hour for enterprise customers
+
+Rate limit information is included in response headers:
+- \`X-RateLimit-Limit\`: Maximum requests allowed
+- \`X-RateLimit-Remaining\`: Requests remaining in current window
+- \`X-RateLimit-Reset\`: Time when the rate limit resets (Unix timestamp)
+
+## Endpoints
+
+### Create User
+
+Creates a new user account with email verification.
+
+**Endpoint:** \`POST /api/users\`
+
+**Request Body:**
+\`\`\`json
+{
+  "username": "string (3-30 characters)",
+  "email": "string (valid email format)",
+  "password": "string (minimum 8 characters)",
+  "full_name": "string (optional)"
+}
+\`\`\`
+
+**Response (201 Created):**
+\`\`\`json
+{
+  "id": "integer",
+  "username": "string",
+  "email": "string",
+  "full_name": "string",
+  "email_verified": false,
+  "created_at": "timestamp"
+}
+\`\`\`
+
+### Get User
+
+Retrieve detailed user information by ID.
+
+**Endpoint:** \`GET /api/users/:id\`
+
+**Response (200 OK):**
+\`\`\`json
+{
+  "id": "integer",
+  "username": "string",
+  "email": "string",
+  "full_name": "string",
+  "email_verified": "boolean",
+  "created_at": "timestamp",
+  "updated_at": "timestamp"
+}
+\`\`\`
+
+### Update User
+
+Updates user profile information. Only provided fields will be updated.
+
+**Endpoint:** \`PATCH /api/users/:id\`
+
+**Request Body:**
+\`\`\`json
+{
+  "username": "string (optional)",
+  "email": "string (optional)",
+  "full_name": "string (optional)"
+}
+\`\`\`
+
+**Response (200 OK):**
+\`\`\`json
+{
+  "id": "integer",
+  "username": "string",
+  "email": "string",
+  "full_name": "string",
+  "updated_at": "timestamp"
+}
+\`\`\`
+
+### Delete User
+
+Permanently deletes a user account. This action cannot be undone.
+
+**Endpoint:** \`DELETE /api/users/:id\`
+
+**Response (204 No Content):**
+\`\`\`json
+{}
+\`\`\`
+
+## Error Responses
+
+All errors follow this format:
+
+\`\`\`json
+{
+  "error": {
+    "code": "string",
+    "message": "string",
+    "details": "object (optional)"
+  }
+}
+\`\`\`
+
+### HTTP Status Codes
+
+- \`400\` - Bad Request: Invalid or missing input data
+- \`401\` - Unauthorized: Missing or invalid authentication token
+- \`403\` - Forbidden: Authenticated but not authorized for this action
+- \`404\` - Not Found: Requested user does not exist
+- \`429\` - Too Many Requests: Rate limit exceeded
+- \`500\` - Internal Server Error: Something went wrong on our end
+
+## Examples
+
+### Creating a user with cURL:
+
+\`\`\`bash
+curl -X POST https://api.example.com/v2/api/users \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -d '{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "SecurePass123!",
+    "full_name": "John Doe"
+  }'
+\`\`\`
+
+### Updating a user with Python:
+
+\`\`\`python
+import requests
+
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+
+data = {
+    "full_name": "John Smith"
+}
+
+response = requests.patch(
+    "https://api.example.com/v2/api/users/123",
+    headers=headers,
+    json=data
+)
+
+print(response.json())
+\`\`\`
+
+## Best Practices
+
+- Always use HTTPS for all API requests
+- Validate input on both client and server side
+- Store tokens securely (never in local storage for web apps)
+- Implement proper error handling and retry logic with exponential backoff
+- Cache responses when appropriate to reduce API calls
+- Use webhook notifications instead of polling when possible
+
+## Changelog
+
+### Version 2.0 (Current)
+- Changed Update endpoint from PUT to PATCH
+- Added full_name field to user model
+- Added email_verified status
+- Improved rate limiting with tiered access
+- Enhanced error response format`
+            }
+        };
+
+        function runDiff() {
+            const testCase = document.getElementById('testCase').value;
+            const detectMoves = document.getElementById('detectMoves').checked;
+            const ignoreWhitespace = document.getElementById('ignoreWhitespace').checked;
+
+            const text1 = TEST_DATA[testCase].v1;
+            const text2 = TEST_DATA[testCase].v2;
+
+            // Show diff container
+            document.getElementById('diffContainer').style.display = 'block';
+
+            // Show loading
+            const loadingHTML = '<div class="loading">Computing diff...<br><small>Analyzing changes with improved algorithm</small></div>';
+            document.getElementById('diffLeft').innerHTML = loadingHTML;
+            document.getElementById('diffRight').innerHTML = loadingHTML;
+
+            // Run diff after a short delay to show loading
+            setTimeout(() => {
+                // Create diff instance
+                const differ = new ImprovedDiff({
+                    similarityThreshold: 0.3,
+                    moveDetectionThreshold: 0.85,
+                    ignoreWhitespace: ignoreWhitespace,
+                    detectMoves: detectMoves,
+                    minMoveBlockSize: 2
+                });
+
+                // Compute diff
+                console.time('Diff computation');
+                const diffResult = differ.computeDiff(text1, text2);
+                console.timeEnd('Diff computation');
+
+                console.log('Diff result:', diffResult);
+
+                // Render
+                const rendered = differ.renderToHTML(diffResult);
+
+                // Update DOM
+                document.getElementById('diffLeft').innerHTML = rendered.left;
+                document.getElementById('diffRight').innerHTML = rendered.right;
+
+                // Update stats
+                const stats = diffResult.stats;
+                document.getElementById('addedCount').textContent =
+                    `${stats.additions} addition${stats.additions !== 1 ? 's' : ''}`;
+                document.getElementById('removedCount').textContent =
+                    `${stats.deletions} deletion${stats.deletions !== 1 ? 's' : ''}`;
+                document.getElementById('modifiedCount').textContent =
+                    `${stats.modifications} modification${stats.modifications !== 1 ? 's' : ''}`;
+
+                // Show moved stats if any
+                if (stats.moves > 0) {
+                    document.getElementById('movedStatsContainer').style.display = 'flex';
+                    document.getElementById('movedCount').textContent =
+                        `${Math.floor(stats.moves / 2)} block${stats.moves !== 2 ? 's' : ''} moved`;
+                } else {
+                    document.getElementById('movedStatsContainer').style.display = 'none';
+                }
+
+                // Setup synchronized scrolling
+                const leftPanel = document.getElementById('diffLeft');
+                const rightPanel = document.getElementById('diffRight');
+
+                let leftScrolling = false;
+                let rightScrolling = false;
+
+                // Remove old listeners
+                leftPanel.onscroll = null;
+                rightPanel.onscroll = null;
+
+                leftPanel.onscroll = function() {
+                    if (!rightScrolling) {
+                        leftScrolling = true;
+                        rightPanel.scrollTop = leftPanel.scrollTop;
+                        setTimeout(() => leftScrolling = false, 50);
+                    }
+                };
+
+                rightPanel.onscroll = function() {
+                    if (!leftScrolling) {
+                        rightScrolling = true;
+                        leftPanel.scrollTop = rightPanel.scrollTop;
+                        setTimeout(() => rightScrolling = false, 50);
+                    }
+                };
+            }, 100);
+        }
+
+        // Ready message
+        console.log('✅ Demo ready! Select a test case and click "Compare Versions"');
+        console.log('📦 Test data embedded - no file loading required');
+    </script>
+</body>
+</html>
