@@ -37,19 +37,19 @@
         <div class="diff-stats" id="diffStats">
             <div class="stat-item">
                 <div class="stat-dot added"></div>
-                <span id="addedCount">0 additions</span>
+                <span id="blocksAddedCount">0 blocks added</span>
             </div>
             <div class="stat-item">
                 <div class="stat-dot removed"></div>
-                <span id="removedCount">0 deletions</span>
+                <span id="blocksRemovedCount">0 blocks removed</span>
             </div>
             <div class="stat-item">
                 <div class="stat-dot modified"></div>
-                <span id="modifiedCount">0 modifications</span>
+                <span id="blocksModifiedCount">0 blocks modified</span>
             </div>
-            <div class="stat-item" id="movedStats" style="display: none;">
-                <div class="stat-dot" style="background: #58a6ff;"></div>
-                <span id="movedCount">0 moved</span>
+            <div class="stat-item">
+                <div class="stat-dot modified"></div>
+                <span id="wordsChangedCount">0 words changed</span>
             </div>
         </div>
     </div>
@@ -80,29 +80,32 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/improved-diff.js') }}"></script>
+<script src="{{ url_for('static', filename='js/improved-diff-v2.js') }}"></script>
 <script>
-    // Initialize improved diff on page load
+    // Initialize hierarchical diff (V2) on page load
     document.addEventListener('DOMContentLoaded', function() {
         // Get content from hidden divs
         const olderContent = document.getElementById('olderContent').textContent;
         const newerContent = document.getElementById('newerContent').textContent;
 
-        // Create improved diff instance with optimized settings
-        const differ = new ImprovedDiff({
-            similarityThreshold: 0.3,      // Match lines with 30% similarity
-            moveDetectionThreshold: 0.85,  // 85% similarity for move detection
-            ignoreWhitespace: true,        // Ignore leading/trailing whitespace
-            detectMoves: true,             // Enable move detection
-            minMoveBlockSize: 2            // Minimum 2 lines for move detection
+        // Create V2 hierarchical diff instance with optimized settings
+        const differ = new ImprovedDiffV2({
+            structuralMatchThreshold: 0.5,  // 50% similarity for matching blocks
+            wordMatchThreshold: 0.6,        // 60% similarity for matching words
+            detectMoves: true,              // Enable move detection
+            minMoveBlockSize: 5             // Minimum 5 words for move detection
         });
 
         // Compute diff
-        console.time('Diff computation');
+        console.time('Diff computation (V2 Hierarchical)');
         const diffResult = differ.computeDiff(olderContent, newerContent);
-        console.timeEnd('Diff computation');
+        console.timeEnd('Diff computation (V2 Hierarchical)');
 
         console.log('Diff statistics:', diffResult.stats);
+        console.log('Blocks parsed:', {
+            original: diffResult.blocks1.length,
+            modified: diffResult.blocks2.length
+        });
 
         // Render diff to HTML
         const rendered = differ.renderToHTML(diffResult);
@@ -111,21 +114,18 @@
         document.getElementById('diffLeft').innerHTML = rendered.left;
         document.getElementById('diffRight').innerHTML = rendered.right;
 
-        // Update stats
+        // Update stats with V2 block-level statistics
         const stats = diffResult.stats;
-        document.getElementById('addedCount').textContent =
-            `${stats.additions} addition${stats.additions !== 1 ? 's' : ''}`;
-        document.getElementById('removedCount').textContent =
-            `${stats.deletions} deletion${stats.deletions !== 1 ? 's' : ''}`;
-        document.getElementById('modifiedCount').textContent =
-            `${stats.modifications} modification${stats.modifications !== 1 ? 's' : ''}`;
+        document.getElementById('blocksAddedCount').textContent =
+            `${stats.blocksAdded} block${stats.blocksAdded !== 1 ? 's' : ''} added`;
+        document.getElementById('blocksRemovedCount').textContent =
+            `${stats.blocksRemoved} block${stats.blocksRemoved !== 1 ? 's' : ''} removed`;
+        document.getElementById('blocksModifiedCount').textContent =
+            `${stats.blocksModified} block${stats.blocksModified !== 1 ? 's' : ''} modified`;
 
-        // Show moved stats if any moves detected
-        if (stats.moves > 0) {
-            document.getElementById('movedStats').style.display = 'flex';
-            document.getElementById('movedCount').textContent =
-                `${stats.moves / 2} block${stats.moves !== 2 ? 's' : ''} moved`;
-        }
+        const totalWordChanges = stats.wordsAdded + stats.wordsRemoved + stats.wordsModified;
+        document.getElementById('wordsChangedCount').textContent =
+            `${totalWordChanges} word${totalWordChanges !== 1 ? 's' : ''} changed`;
 
         // Sync scrolling between left and right panels
         const leftPanel = document.getElementById('diffLeft');
