@@ -82,7 +82,7 @@ def create_app(config_name='development'):
     app.email_service = email_service
     
     # Import models (needed for migrations)
-    from models import User, BlogDraft, DraftVersion
+    from models import User, BlogDraft, DraftVersion, PublishingPlatform
     
     # Security middleware
     @app.before_request
@@ -155,12 +155,14 @@ def create_app(config_name='development'):
     from routes.drafts import drafts_bp
     from routes.api import api_bp
     from routes.settings import settings_bp
+    from routes.publish import publish_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(main_bp)
     app.register_blueprint(drafts_bp, url_prefix='/drafts')
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(settings_bp, url_prefix='/settings')
+    app.register_blueprint(publish_bp, url_prefix='/api/publish')
     
     # Error handlers
     @app.errorhandler(404)

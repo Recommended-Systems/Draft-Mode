@@ -338,3 +338,24 @@ def update_draft_timestamp(mapper, connection, target):
         db.text("UPDATE blog_drafts SET updated_at = :now WHERE id = :draft_id"),
         {"now": datetime.utcnow(), "draft_id": target.blog_draft_id}
     )
+
+class PublishingPlatform(db.Model):
+    """Store encrypted API credentials for publishing platforms"""
+    __tablename__ = 'publishing_platforms'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    platform_type = db.Column(db.String(50), nullable=False)  # 'ghost', 'substack', 'buttondown', 'beehiiv'
+    platform_url = db.Column(db.String(255))  # Ghost admin URL, etc.
+    encrypted_api_key = db.Column(db.Text, nullable=False)  # Encrypted API key
+    platform_config = db.Column(db.Text)  # JSON for additional platform-specific settings
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_used_at = db.Column(db.DateTime)
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('publishing_platforms', lazy=True))
+
+    def __repr__(self):
+        return f'<PublishingPlatform {self.platform_type} for user {self.user_id}>'

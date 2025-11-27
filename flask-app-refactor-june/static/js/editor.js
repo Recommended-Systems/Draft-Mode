@@ -40,19 +40,23 @@ class DraftEditor {
     init() {
         // Load editor data
         this.loadEditorData();
-        
+
         // Initialize components
         this.initElements();
         this.initEventListeners();
         this.loadDraftsList();
-        
+
         // Initialize content
         this.updateWordCount();
         this.updateSaveStatus('Ready', 'ready');
         this.lastSavedContent = this.elements.contentEditor.value;
-        
+
         // Auto-resize textarea
         this.initAutoResize();
+
+        // Load publishing platforms
+        this.configuredPlatforms = [];
+        this.loadPublishingPlatforms();
     }
     
     loadEditorData() {
@@ -82,6 +86,9 @@ class DraftEditor {
             compareBtn: document.getElementById('compareBtn'),
             shareBtn: document.getElementById('shareBtn'),
             exportBtn: document.getElementById('exportBtn'),
+            publishBtn: document.getElementById('publishBtn'),
+            publishBtnText: document.getElementById('publishBtnText'),
+            publishPlatformSelect: document.getElementById('publishPlatformSelect'),
             deleteVersionBtn: document.getElementById('deleteVersionBtn'),
             deleteDraftBtn: document.getElementById('deleteDraftBtn'),
 
@@ -148,6 +155,16 @@ class DraftEditor {
         
         this.elements.exportBtn.addEventListener('click', () => {
             this.exportMarkdown();
+        });
+
+        this.elements.publishBtn.addEventListener('click', () => {
+            this.handlePublish();
+        });
+
+        this.elements.publishPlatformSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                this.publishToPlatform(e.target.value);
+            }
         });
 
         this.elements.deleteVersionBtn.addEventListener('click', () => {
@@ -787,6 +804,118 @@ class DraftEditor {
                 restoreElement();
             }
         });
+    }
+
+    // ========================================================================
+    // Publishing Methods
+    // ========================================================================
+
+    async loadPublishingPlatforms() {
+        try {
+            const response = await this.secureFetch('/api/publish/platforms');
+            const data = await response.json();
+            this.configuredPlatforms = data.platforms || [];
+            this.updatePublishButton();
+        } catch (error) {
+            console.error('Error loading publishing platforms:', error);
+            this.configuredPlatforms = [];
+        }
+    }
+
+    updatePublishButton() {
+        const platformCount = this.configuredPlatforms.length;
+
+        if (platformCount === 0) {
+            // No platforms configured
+            this.elements.publishBtnText.textContent = 'Publish to...';
+            this.elements.publishPlatformSelect.style.display = 'none';
+        } else if (platformCount === 1) {
+            // One platform - show platform name
+            const platform = this.configuredPlatforms[0];
+            const platformName = platform.type.charAt(0).toUpperCase() + platform.type.slice(1);
+            this.elements.publishBtnText.textContent = `Publish to ${platformName}`;
+            this.elements.publishPlatformSelect.style.display = 'none';
+        } else {
+            // Multiple platforms - show dropdown
+            this.elements.publishBtnText.textContent = 'Publish to...';
+            this.elements.publishPlatformSelect.style.display = 'block';
+
+            // Populate dropdown
+            this.elements.publishPlatformSelect.innerHTML = '<option value="">Select platform...</option>';
+            this.configuredPlatforms.forEach(platform => {
+                const platformName = platform.type.charAt(0).toUpperCase() + platform.type.slice(1);
+                const option = document.createElement('option');
+                option.value = platform.type;
+                option.textContent = platformName;
+                this.elements.publishPlatformSelect.appendChild(option);
+            });
+        }
+    }
+
+    handlePublish() {
+        if (this.configuredPlatforms.length === 0) {
+            // No API key - redirect to settings
+            window.location.href = '/settings/profile#publishing';
+        } else if (this.configuredPlatforms.length === 1) {
+            // One platform - publish directly
+            this.publishToPlatform(this.configuredPlatforms[0].type);
+        }
+        // For multiple platforms, the dropdown change event handles it
+    }
+
+    async publishToPlatform(platformType) {
+        if (!platformType) {
+            return;
+        }
+
+        // Update button state
+        const originalText = this.elements.publishBtnText.textContent;
+        this.elements.publishBtnText.textContent = 'Publishing...';
+        this.elements.publishBtn.disabled = true;
+
+        try {
+            let response;
+
+            if (platformType === 'ghost') {
+                response = await this.secureFetch(`/api/publish/ghost/${this.data.currentVersionId}`, {
+                    method: 'POST'
+                });
+            } else {
+                throw new Error(`Publishing to ${platformType} is not yet implemented`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Show success message
+                alert(`Successfully published to ${platformType.charAt(0).toUpperCase() + platformType.slice(1)}!\n\nYou can continue editing at:\n${data.edit_url}`);
+
+                // Optionally open the edit URL
+                if (confirm('Would you like to open the post in a new tab?')) {
+                    window.open(data.edit_url, '_blank');
+                }
+            } else {
+                // Show error message
+                if (data.redirect) {
+                    alert(data.error + '\n\nRedirecting to settings...');
+                    window.location.href = data.redirect;
+                } else {
+                    alert('Publishing failed: ' + (data.error || 'Unknown error'));
+                }
+            }
+        } catch (error) {
+            console.error('Error publishing:', error);
+            alert('Failed to publish: ' + error.message);
+        } finally {
+            // Restore button state
+            this.elements.publishBtnText.textContent = originalText;
+            this.elements.publishBtn.disabled = false;
+
+            // Reset dropdown selection if multiple platforms
+            if (this.configuredPlatforms.length > 1) {
+                this.elements.publishPlatformSelect.value = '';
+            }
+        }
     }
 }
 

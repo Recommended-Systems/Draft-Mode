@@ -136,13 +136,66 @@
             </div>
         </div>
 
+        <!-- Publishing Platforms Section -->
+        <div class="settings-section" id="publishing">
+            <div class="section-header">
+                <h3>Publishing Platforms</h3>
+                <p>Configure API keys to publish directly to your platforms</p>
+            </div>
+
+            <!-- Ghost Platform -->
+            <div class="platform-config">
+                <h4 class="subsection-title">Ghost</h4>
+                <p class="subsection-description">Publish drafts to your Ghost blog</p>
+
+                <div class="form-group">
+                    <label for="ghost_url">Ghost Site URL</label>
+                    <input type="url" id="ghost_url" placeholder="https://your-site.ghost.io" value="">
+                </div>
+
+                <div class="form-group">
+                    <label for="ghost_api_key">Admin API Key</label>
+                    <input type="password" id="ghost_api_key" placeholder="••••••••••••••••" value="">
+                    <p style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                        Find this in Ghost Admin → Integrations → Add Custom Integration
+                    </p>
+                </div>
+
+                <div class="form-actions">
+                    <button id="saveGhostBtn" class="btn primary">Save Ghost Config</button>
+                    <button id="testGhostBtn" class="btn" style="display: none;">Test Connection</button>
+                    <button id="removeGhostBtn" class="btn danger" style="display: none;">Remove</button>
+                </div>
+
+                <div id="ghostStatus" style="margin-top: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-divider"></div>
+
+            <!-- Future Platforms (Coming Soon) -->
+            <div class="platform-config" style="opacity: 0.5; pointer-events: none;">
+                <h4 class="subsection-title">Substack <span style="font-size: 9px; color: var(--text-muted);">(COMING SOON)</span></h4>
+                <p class="subsection-description">Publish to your Substack publication</p>
+            </div>
+
+            <div class="platform-config" style="opacity: 0.5; pointer-events: none;">
+                <h4 class="subsection-title">Buttondown <span style="font-size: 9px; color: var(--text-muted);">(COMING SOON)</span></h4>
+                <p class="subsection-description">Publish to your Buttondown newsletter</p>
+            </div>
+
+            <div class="platform-config" style="opacity: 0.5; pointer-events: none;">
+                <h4 class="subsection-title">Beehiiv <span style="font-size: 9px; color: var(--text-muted);">(COMING SOON)</span></h4>
+                <p class="subsection-description">Publish to your Beehiiv newsletter</p>
+            </div>
+        </div>
+
         <!-- Danger Zone Section -->
         <div class="settings-section danger-section">
             <div class="section-header">
                 <h3>Danger Zone</h3>
                 <p>Irreversible and destructive actions</p>
             </div>
-            
+
             <div class="danger-actions">
                 <button id="deleteAccountBtn" class="btn danger">Delete Account</button>
                 <p class="danger-description">
@@ -190,6 +243,170 @@
 
 {% block extra_js %}
 <script>
+    // Publishing Platforms - Ghost Configuration
+    const saveGhostBtn = document.getElementById('saveGhostBtn');
+    const testGhostBtn = document.getElementById('testGhostBtn');
+    const removeGhostBtn = document.getElementById('removeGhostBtn');
+    const ghostUrlInput = document.getElementById('ghost_url');
+    const ghostApiKeyInput = document.getElementById('ghost_api_key');
+    const ghostStatus = document.getElementById('ghostStatus');
+
+    // Load existing Ghost config on page load
+    fetch('/api/publish/platforms')
+        .then(response => response.json())
+        .then(data => {
+            const ghostPlatform = data.platforms.find(p => p.type === 'ghost');
+            if (ghostPlatform) {
+                ghostUrlInput.value = ghostPlatform.url || '';
+                ghostApiKeyInput.placeholder = '•••••••• (configured)';
+                testGhostBtn.style.display = 'inline-block';
+                removeGhostBtn.style.display = 'inline-block';
+            }
+        })
+        .catch(error => console.error('Error loading platforms:', error));
+
+    // Save Ghost configuration
+    saveGhostBtn.addEventListener('click', async () => {
+        const ghostUrl = ghostUrlInput.value.trim();
+        const ghostApiKey = ghostApiKeyInput.value.trim();
+
+        if (!ghostUrl) {
+            showGhostStatus('Please enter your Ghost site URL', 'error');
+            return;
+        }
+
+        if (!ghostApiKey) {
+            showGhostStatus('Please enter your Ghost Admin API Key', 'error');
+            return;
+        }
+
+        saveGhostBtn.disabled = true;
+        saveGhostBtn.textContent = 'Saving...';
+
+        try {
+            const response = await fetch('/api/publish/platforms/ghost', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    platform_url: ghostUrl,
+                    api_key: ghostApiKey
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showGhostStatus('Ghost configured successfully!', 'success');
+                ghostApiKeyInput.placeholder = '•••••••• (configured)';
+                ghostApiKeyInput.value = '';
+                testGhostBtn.style.display = 'inline-block';
+                removeGhostBtn.style.display = 'inline-block';
+            } else {
+                showGhostStatus(data.error || 'Failed to save configuration', 'error');
+            }
+        } catch (error) {
+            showGhostStatus('Error saving configuration: ' + error.message, 'error');
+        } finally {
+            saveGhostBtn.disabled = false;
+            saveGhostBtn.textContent = 'Save Ghost Config';
+        }
+    });
+
+    // Test Ghost connection
+    testGhostBtn.addEventListener('click', async () => {
+        const ghostUrl = ghostUrlInput.value.trim();
+
+        if (!ghostUrl) {
+            showGhostStatus('Please enter your Ghost site URL', 'error');
+            return;
+        }
+
+        testGhostBtn.disabled = true;
+        testGhostBtn.textContent = 'Testing...';
+
+        try {
+            // Test connection via server-side endpoint to avoid CORS issues
+            const response = await fetch('/api/publish/test-ghost', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    platform_url: ghostUrl
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showGhostStatus('✓ ' + data.message, 'success');
+            } else {
+                showGhostStatus(data.error || 'Connection test failed', 'error');
+            }
+        } catch (error) {
+            showGhostStatus('Error testing connection: ' + error.message, 'error');
+        } finally {
+            testGhostBtn.disabled = false;
+            testGhostBtn.textContent = 'Test Connection';
+        }
+    });
+
+    // Remove Ghost configuration
+    removeGhostBtn.addEventListener('click', async () => {
+        if (!confirm('Remove Ghost publishing configuration?')) {
+            return;
+        }
+
+        try {
+            const platformsResponse = await fetch('/api/publish/platforms');
+            const platformsData = await platformsResponse.json();
+            const ghostPlatform = platformsData.platforms.find(p => p.type === 'ghost');
+
+            if (!ghostPlatform) {
+                showGhostStatus('No Ghost configuration found', 'error');
+                return;
+            }
+
+            const response = await fetch(`/api/publish/platforms/${ghostPlatform.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showGhostStatus('Ghost configuration removed', 'success');
+                ghostUrlInput.value = '';
+                ghostApiKeyInput.value = '';
+                ghostApiKeyInput.placeholder = '••••••••••••••••';
+                testGhostBtn.style.display = 'none';
+                removeGhostBtn.style.display = 'none';
+            } else {
+                showGhostStatus(data.error || 'Failed to remove configuration', 'error');
+            }
+        } catch (error) {
+            showGhostStatus('Error removing configuration: ' + error.message, 'error');
+        }
+    });
+
+    function showGhostStatus(message, type) {
+        ghostStatus.style.display = 'block';
+        ghostStatus.textContent = message;
+        ghostStatus.style.color = type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)';
+        ghostStatus.style.fontWeight = '600';
+        ghostStatus.style.fontSize = '11px';
+
+        setTimeout(() => {
+            ghostStatus.style.display = 'none';
+        }, 5000);
+    }
+
     // Theme switching
     document.querySelectorAll('input[name="theme"]').forEach(radio => {
         radio.addEventListener('change', function() {

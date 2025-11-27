@@ -4,6 +4,7 @@ from datetime import timedelta
 class Config:
     """Base configuration"""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')  # For encrypting API keys
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     
@@ -45,7 +46,11 @@ class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///draft_mode_dev.db'
-    
+
+    # Development encryption key (persistent for development)
+    # In production, ALWAYS use environment variable
+    ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY') or 'kvA8rLZulpa8gxm6duz2kEcpLnATFBNpZc3gcUe7SHs='
+
     # Development overrides for local testing
     SESSION_COOKIE_SECURE = False  # Allow HTTP in development
     FORCE_HTTPS = False
