@@ -26,7 +26,7 @@ class User(db.Model):
     locked_until = db.Column(db.DateTime, nullable=True)
 
     # Email verification fields
-    email_verified = db.Column(db.Boolean, default=False)
+    email_verified = db.Column(db.Boolean, default=False, nullable=False, server_default='0')
     verification_token = db.Column(db.String(100), unique=True, nullable=True)
     verification_token_expires = db.Column(db.DateTime, nullable=True)
 
@@ -40,7 +40,15 @@ class User(db.Model):
 
     # Relationships
     blog_drafts = db.relationship('BlogDraft', backref='author', lazy=True, cascade='all, delete-orphan')
-    
+
+    def __init__(self, **kwargs):
+        """Initialize user with default values"""
+        super(User, self).__init__(**kwargs)
+        if self.email_verified is None:
+            self.email_verified = False
+        if self.failed_login_attempts is None:
+            self.failed_login_attempts = 0
+
     def set_password(self, password):
         """Hash and set password"""
         self.password_hash = generate_password_hash(password)

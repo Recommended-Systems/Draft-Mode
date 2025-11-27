@@ -387,3 +387,379 @@ def on_update(mapper, connection, target):
     # Use raw SQL via connection, not ORM
     connection.execute(...)
 ```
+
+## Testing Requirements (MANDATORY)
+
+**CRITICAL: Every new feature MUST include tests. A feature is NOT complete without tests.**
+
+### Philosophy
+
+This project follows **Test-Driven Development** principles:
+1. Tests ensure features work correctly
+2. Tests prevent regressions as code evolves
+3. Tests serve as executable documentation
+4. Tests enable confident refactoring
+
+### Testing Infrastructure
+
+**Test Suite**: 131 automated tests across all modules
+- **Unit Tests** (`tests/unit/`): 56 tests for models, utilities
+- **Integration Tests** (`tests/integration/`): 75 tests for workflows, API endpoints
+
+**Coverage Goal**: Minimum 70% overall, 100% for critical security features
+
+**Documentation**:
+- `TESTING_GUIDE.md` - Quick start and architecture overview
+- `tests/README.md` - Comprehensive testing documentation
+- `pytest.ini` - Test configuration
+- `Makefile` - Convenient test commands
+
+### Required Tests for Every New Feature
+
+When adding ANY new functionality, you MUST write tests covering:
+
+1. ✅ **Success case** (happy path) - Feature works as intended
+2. ✅ **Validation errors** - Invalid input is properly rejected
+3. ✅ **Authentication** - Protected routes require login
+4. ✅ **Authorization** - Users can't access other users' data
+5. ✅ **Edge cases** - Empty data, null values, boundary conditions
+6. ✅ **Error handling** - External service failures, network errors
+
+### Testing Workflow
+
+#### Step 1: Identify Test Type
+
+- **Unit Test** → `tests/unit/` - Single function/model, no external dependencies
+- **Integration Test** → `tests/integration/` - Full workflows, routes, API endpoints
+
+#### Step 2: Use Existing Fixtures
+
+Fixtures are defined in `tests/conftest.py`:
+
+```python
+# Database and app
+def test_something(app, client, init_database):
+    """Use app context and test client"""
+
+# Users
+def test_something(test_user, authenticated_client):
+    """Use pre-configured user and authenticated session"""
+
+# Drafts
+def test_something(test_draft, test_draft_with_versions):
+    """Use pre-created draft data"""
+
+# Publishing
+def test_something(ghost_platform, mock_ghost_response):
+    """Use publishing platform fixtures"""
+```
+
+#### Step 3: Write Tests Using AAA Pattern
+
+```python
+class TestNewFeature:
+    """Test [feature name] functionality"""
+
+    def test_success_case(self, authenticated_client):
+        """Test normal operation succeeds"""
+        # Arrange: Set up test data
+        data = {'title': 'Test Draft', 'content': 'Content'}
+
+        # Act: Execute the feature
+        response = authenticated_client.post('/api/endpoint', json=data)
+
+        # Assert: Verify expected behavior
+        assert response.status_code == 200
+        assert response.json()['success'] is True
+
+    def test_validation_error(self, authenticated_client):
+        """Test invalid input is rejected"""
+        response = authenticated_client.post('/api/endpoint', json={})
+        assert response.status_code == 400
+
+    def test_requires_authentication(self, client):
+        """Test unauthenticated access is blocked"""
+        response = client.post('/api/endpoint', json={})
+        assert response.status_code == 302  # Redirect to login
+
+    def test_authorization_check(self, authenticated_client, second_user):
+        """Test users cannot access other users' data"""
+        # Create resource for second_user
+        # Try to access with authenticated_client (first user)
+        # Verify access is denied
+```
+
+#### Step 4: Mock External Services
+
+**Always mock external API calls to avoid network dependencies:**
+
+```python
+from unittest.mock import patch, MagicMock
+
+@patch('routes.publish.requests.post')
+def test_ghost_publishing(mock_post, authenticated_client, test_draft):
+    """Test Ghost API without making real HTTP requests"""
+    # Mock the API response
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {
+        'posts': [{'id': 'test-post-id'}]
+    }
+    mock_post.return_value = mock_response
+
+    # Test the feature
+    version_id = test_draft.versions[0].id
+    response = authenticated_client.post(f'/api/publish/ghost/{version_id}')
+
+    assert response.status_code == 200
+    assert 'ghost_post_id' in response.json()
+```
+
+#### Step 5: Run Tests
+
+```bash
+# Run specific test file
+pytest tests/integration/test_new_feature.py -v
+
+# Run all tests
+pytest
+
+# Check coverage
+pytest --cov=routes/new_module --cov-report=term-missing
+
+# Quick test (no coverage)
+make quick-test
+
+# Run pre-commit checks (format + lint + test)
+make pre-commit
+```
+
+### Coverage Requirements
+
+**Minimum Coverage:**
+- Overall: 70%
+- New code: Should not decrease coverage
+- Critical features: 100%
+
+**Critical Features Requiring 100% Coverage:**
+- Authentication and authorization logic
+- Password hashing and validation
+- Data encryption/decryption
+- Payment processing (if applicable)
+- Data deletion operations
+- Security middleware
+
+**Check Coverage:**
+```bash
+# Generate coverage report
+pytest --cov=. --cov-report=html
+
+# View report
+make coverage  # Opens HTML report in browser
+```
+
+### Make Commands for Testing
+
+```bash
+make help                # Show all available commands
+
+# Testing
+make test                # Run all tests with coverage
+make test-unit           # Run unit tests only
+make test-integration    # Run integration tests only
+make quick-test          # Fast tests without coverage
+make coverage            # Generate and open coverage report
+
+# Code quality
+make lint                # Run code linters
+make format              # Auto-format code (black, isort)
+make security            # Run security checks
+
+# Pre-commit
+make pre-commit          # Format + lint + quick test
+make ci                  # Full CI checks (format + lint + security + test)
+```
+
+### Definition of Done Checklist
+
+Before considering ANY feature complete, verify:
+
+```markdown
+- [ ] Feature code is written and working
+- [ ] Tests are written covering:
+  - [ ] Success case
+  - [ ] Validation errors
+  - [ ] Authentication (if applicable)
+  - [ ] Authorization (if applicable)
+  - [ ] Edge cases
+  - [ ] Error handling
+- [ ] All tests pass: `pytest`
+- [ ] Coverage meets minimum 70%: `pytest --cov`
+- [ ] Code is formatted: `make format`
+- [ ] Linting passes: `make lint`
+- [ ] Security checks pass: `make security`
+- [ ] Full CI passes: `make ci`
+```
+
+**Only after ALL items are checked can the feature be considered complete.**
+
+### Example: Adding "Draft Templates" Feature
+
+#### 1. Create Test File
+
+```python
+# tests/integration/test_templates.py
+
+import pytest
+import json
+from models import DraftTemplate, db
+
+class TestDraftTemplates:
+    """Test draft template functionality"""
+
+    def test_create_template_from_draft(self, authenticated_client, test_draft):
+        """Test creating template from existing draft"""
+        response = authenticated_client.post(
+            f'/api/drafts/{test_draft.id}/save-as-template',
+            json={'template_name': 'Blog Post Template'}
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['success'] is True
+        assert 'template_id' in data
+
+    def test_create_template_validation_error(self, authenticated_client, test_draft):
+        """Test creating template without name fails"""
+        response = authenticated_client.post(
+            f'/api/drafts/{test_draft.id}/save-as-template',
+            json={'template_name': ''}  # Empty name
+        )
+        assert response.status_code == 400
+
+    def test_list_user_templates(self, authenticated_client):
+        """Test listing user's templates"""
+        response = authenticated_client.get('/api/templates')
+        assert response.status_code == 200
+        assert 'templates' in response.json()
+
+    def test_cannot_access_other_user_template(self, authenticated_client, second_user):
+        """Test users cannot access other users' templates"""
+        # Create template for second_user
+        template = DraftTemplate(
+            name='Other User Template',
+            content='Content',
+            user_id=second_user.id
+        )
+        db.session.add(template)
+        db.session.commit()
+
+        # Try to access with first user
+        response = authenticated_client.get(f'/api/templates/{template.id}')
+        assert response.status_code == 404
+```
+
+#### 2. Add Fixture (if needed)
+
+```python
+# tests/conftest.py
+
+@pytest.fixture
+def test_template(init_database, test_user):
+    """Create a test template"""
+    template = DraftTemplate(
+        name='Test Template',
+        content='# Template Content',
+        user_id=test_user.id
+    )
+    db.session.add(template)
+    db.session.commit()
+    return template
+```
+
+#### 3. Implement Feature
+
+```python
+# routes/templates.py
+# Now write the actual implementation
+```
+
+#### 4. Run Tests
+
+```bash
+pytest tests/integration/test_templates.py -v
+pytest --cov=routes/templates --cov-report=term-missing
+make ci  # Run full CI checks
+```
+
+### Common Testing Patterns
+
+**Testing Protected Routes:**
+```python
+def test_requires_authentication(self, client):
+    response = client.get('/protected/route')
+    assert response.status_code == 302  # Redirect to login
+
+def test_authenticated_access(self, authenticated_client):
+    response = authenticated_client.get('/protected/route')
+    assert response.status_code == 200
+```
+
+**Testing Database Models:**
+```python
+def test_create_model(self, init_database):
+    instance = Model(field='value')
+    db.session.add(instance)
+    db.session.commit()
+    assert instance.id is not None
+```
+
+**Testing API Endpoints:**
+```python
+def test_api_success(self, authenticated_client):
+    response = authenticated_client.get('/api/endpoint')
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert data['success'] is True
+```
+
+### When Tests Fail
+
+1. **Read the error message** - Pytest provides detailed failure info
+2. **Run with verbose output** - `pytest -vv -s`
+3. **Use debugger** - `pytest --pdb` drops into debugger on failure
+4. **Check fixtures** - Ensure test data is set up correctly
+5. **Verify mocks** - Ensure external services are properly mocked
+
+### CI/CD Pipeline
+
+GitHub Actions automatically runs on every push:
+
+1. **Tests** - Runs on Python 3.9, 3.10, 3.11
+2. **Linting** - Checks code formatting (black, isort, flake8)
+3. **Type Checking** - Runs mypy
+4. **Security** - Scans for vulnerabilities (safety, bandit)
+5. **Coverage** - Reports to Codecov
+
+**See results:** `.github/workflows/tests.yml`
+
+### Resources
+
+- **Quick Start**: `TESTING_GUIDE.md`
+- **Detailed Guide**: `tests/README.md`
+- **Example Tests**: Browse `tests/unit/` and `tests/integration/`
+- **Pytest Docs**: https://docs.pytest.org/
+- **Flask Testing**: https://flask.palletsprojects.com/en/2.3.x/testing/
+
+### Summary
+
+**Tests are not optional. A feature is NOT complete without tests.**
+
+Every time you write new code:
+1. ✅ Write tests (alongside or before implementation)
+2. ✅ Run tests: `pytest`
+3. ✅ Check coverage: `pytest --cov`
+4. ✅ Run full CI: `make ci`
+5. ✅ Only then consider the feature complete
+
+This discipline ensures the codebase remains maintainable, reliable, and regression-free as it grows.
