@@ -35,14 +35,16 @@ class EmailService:
         """
         if not self.email_enabled:
             # In development, just log the email
-            print(f"\n{'='*60}")
-            print(f"EMAIL SIMULATION (Email service not configured)")
-            print(f"{'='*60}")
-            print(f"To: {to_email}")
-            print(f"From: {self.from_email}")
-            print(f"Subject: {subject}")
-            print(f"\n{body_text}")
-            print(f"{'='*60}\n")
+            import sys
+            print(f"\n{'='*60}", flush=True)
+            print(f"EMAIL SIMULATION (Email service not configured)", flush=True)
+            print(f"{'='*60}", flush=True)
+            print(f"To: {to_email}", flush=True)
+            print(f"From: {self.from_email}", flush=True)
+            print(f"Subject: {subject}", flush=True)
+            print(f"\n{body_text}", flush=True)
+            print(f"{'='*60}\n", flush=True)
+            sys.stdout.flush()
             return True
 
         # TODO: Implement actual email sending
@@ -65,11 +67,20 @@ class EmailService:
 
     def send_verification_email(self, user, verification_token):
         """Send email verification link to new user"""
-        verification_url = url_for(
-            'auth.verify_email',
-            token=verification_token,
-            _external=True
-        )
+        # Generate URL with proper scheme
+        from flask import request, has_request_context
+
+        if has_request_context():
+            verification_url = url_for(
+                'auth.verify_email',
+                token=verification_token,
+                _external=True
+            )
+        else:
+            # Fallback when no request context (e.g., CLI, background tasks)
+            scheme = current_app.config.get('PREFERRED_URL_SCHEME', 'http')
+            server_name = current_app.config.get('SERVER_NAME', 'localhost:5000')
+            verification_url = f"{scheme}://{server_name}/auth/verify-email/{verification_token}"
 
         subject = f"Verify your {self.app_name} account"
 
@@ -114,11 +125,20 @@ The {self.app_name} Team
 
     def send_password_reset_email(self, user, reset_token):
         """Send password reset link to user"""
-        reset_url = url_for(
-            'auth.reset_password',
-            token=reset_token,
-            _external=True
-        )
+        # Generate URL with proper scheme
+        from flask import request, has_request_context
+
+        if has_request_context():
+            reset_url = url_for(
+                'auth.reset_password',
+                token=reset_token,
+                _external=True
+            )
+        else:
+            # Fallback when no request context (e.g., CLI, background tasks)
+            scheme = current_app.config.get('PREFERRED_URL_SCHEME', 'http')
+            server_name = current_app.config.get('SERVER_NAME', 'localhost:5000')
+            reset_url = f"{scheme}://{server_name}/auth/reset-password/{reset_token}"
 
         subject = f"Reset your {self.app_name} password"
 

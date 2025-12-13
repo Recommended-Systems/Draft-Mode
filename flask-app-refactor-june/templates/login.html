@@ -17,9 +17,14 @@
         <div class="form-group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
+            <div style="margin-top: 4px;">
+                <a href="{{ url_for('auth.forgot_password') }}" style="font-size: 10px; color: var(--accent-green); text-decoration: none;">
+                    Forgot password?
+                </a>
+            </div>
         </div>
-        
-        <div style="margin-top: 20px;">
+
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
             <button type="submit" class="btn primary">Sign In</button>
             <a href="{{ url_for("auth.signup") }}" class="btn">Create Account</a>
         </div>

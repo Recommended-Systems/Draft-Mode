@@ -112,6 +112,7 @@ def create_app(config_name='development'):
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
 
         # Permissions Policy - restrict access to browser features
+        # Note: Only include valid, non-deprecated features
         permissions_policy = (
             "geolocation=(), "
             "microphone=(), "
@@ -120,8 +121,6 @@ def create_app(config_name='development'):
             "usb=(), "
             "magnetometer=(), "
             "gyroscope=(), "
-            "speaker=(self), "
-            "vibrate=(), "
             "fullscreen=(self), "
             "sync-xhr=()"
         )

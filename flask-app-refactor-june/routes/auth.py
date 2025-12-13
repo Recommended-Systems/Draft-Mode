@@ -203,9 +203,14 @@ def forgot_password():
             # Send reset email
             from utils.email_service import email_service
             try:
+                print(f"\n[DEBUG] Attempting to send password reset email to {user.email}", flush=True)
                 email_service.send_password_reset_email(user, reset_token)
+                print(f"[DEBUG] Email send completed", flush=True)
             except Exception as e:
+                print(f"[ERROR] Failed to send password reset email: {e}", flush=True)
                 current_app.logger.error(f"Failed to send password reset email: {e}")
+                import traceback
+                traceback.print_exc()
 
         return redirect(url_for('auth.login'))
 
