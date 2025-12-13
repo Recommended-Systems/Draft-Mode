@@ -81,23 +81,23 @@
 }
 
 .drafts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
 }
 
 .draft-card {
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
-    padding: 20px;
+    padding: 24px;
     position: relative;
     transition: all 0.3s ease;
     overflow: hidden;
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr auto auto auto;
-    gap: 20px;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 220px;
+    cursor: pointer;
 }
 
 .draft-card::before {
@@ -131,21 +131,23 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
     min-width: 0;
 }
 
 .draft-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
     word-break: break-word;
+    line-height: 1.2;
 }
 
 .draft-status {
@@ -189,15 +191,17 @@
 
 .draft-meta {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
     font-size: 10px;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    flex-shrink: 0;
-    min-width: 120px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-primary);
+    margin-top: auto;
 }
 
 .draft-versions {
@@ -218,12 +222,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-shrink: 0;
-    min-width: 200px;
+    flex-wrap: wrap;
+    width: 100%;
 }
 
 .version-selector {
-    padding: 4px 8px;
+    padding: 6px 8px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-primary);
     color: var(--text-primary);
@@ -231,8 +235,8 @@
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    min-width: 120px;
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .version-selector:focus {
@@ -278,11 +282,12 @@
 }
 
 .btn.edit-btn {
-    padding: 6px 12px;
+    padding: 8px 16px;
     font-size: 10px;
-    min-width: 50px;
+    min-width: 60px;
     text-align: center;
-    flex-shrink: 0;
+    flex: 1;
+    width: 100%;
 }
 
 .empty-state {

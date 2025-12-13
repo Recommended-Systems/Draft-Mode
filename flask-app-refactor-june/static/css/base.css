@@ -196,30 +196,16 @@ body {
 
 /* Content container - simplified without window wrapper */
 .content-wrapper {
-    background: var(--bg-secondary);
-    border: 2px solid var(--border-primary);
+    background: transparent;
     position: relative;
     min-height: 500px;
-    box-shadow: 0 4px 0 var(--bg-tertiary);
     width: 100%;
-}
-
-.content-wrapper::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, var(--accent-green) 0%, transparent 50%, var(--accent-green) 100%);
-    z-index: -1;
-    opacity: 0.1;
 }
 
 /* Content area */
 .content {
-    padding: 24px;
-    background: var(--bg-primary);
+    padding: 0;
+    background: transparent;
     min-height: 400px;
 }
 

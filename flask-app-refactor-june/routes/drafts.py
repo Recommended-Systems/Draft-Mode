@@ -37,19 +37,29 @@ def create_draft():
             )
             db.session.add(draft)
             db.session.flush()  # Get draft ID
-            
-            # Create initial version
-            version = DraftVersion(
+
+            # Create initial main version
+            main_version = DraftVersion(
                 version_name='v1.0',
                 content=f'# {title}\n\nStart writing your blog post here...',
                 blog_draft_id=draft.id,
                 is_current=True,
                 tag='draft'
             )
-            db.session.add(version)
+            db.session.add(main_version)
+
+            # Create Research Vault version - for storing cut content, research, and appendix material
+            research_vault = DraftVersion(
+                version_name='Research Vault',
+                content=f'# Research Vault: {title}\n\n## Cut Content\n*Content removed from main draft goes here...*\n\n## Research Notes\n*Background research, references, and sources...*\n\n## Appendix & Extras\n*Additional material for reference...*',
+                blog_draft_id=draft.id,
+                is_current=False,
+                tag='draft'
+            )
+            db.session.add(research_vault)
             db.session.commit()
-            
-            flash('Draft created successfully!', 'success')
+
+            flash('Draft created successfully with Research Vault!', 'success')
             return redirect(url_for('drafts.edit_draft', draft_id=draft.id))
             
         except Exception as e:
