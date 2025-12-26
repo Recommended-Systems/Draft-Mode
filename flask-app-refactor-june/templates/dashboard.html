@@ -7,20 +7,155 @@
 {% endblock %}
 
 {% block breadcrumb %}
-<div class="breadcrumb">
-    <span style="color: var(--accent-green); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-        System Status: Online ► Session: Active <br>
-        ... Total Projects: {{ drafts|length }} ► Total Versions: {% set total_versions = 0 %}
-            {% for draft in drafts %}
-                {% set total_versions = total_versions + draft.versions|length %}
-            {% endfor %}
-            {{ user.total_versions }}
-            {% if drafts|length > 0 %}
-                    ({{ "%.1f"|format(user.total_versions / drafts|length) }} per draft)
-            {% endif %}<br> 
+<div class="breadcrumb" id="terminal-container">
+    <span id="terminal-output" style="color: var(--accent-green); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">
+        <span class="terminal-cursor">█</span>
+    </span>
+    <span id="terminal-data" style="display: none;">
+        System Status: Online ► Session: Active
+        ... Total Projects: {{ drafts|length }} ► Total Versions: {{ user.total_versions }}{% if drafts|length > 0 %} ({{ "%.1f"|format(user.total_versions / drafts|length) }} per draft){% endif %}
         ... User: {{ user.name }} ► User Since: {{ user.created_at.strftime('%m/%y') }}
     </span>
+    <div id="terminal-input-line" style="display: none; color: var(--accent-green); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+        <span id="terminal-prompt">► </span><span id="terminal-user-input"></span><span class="terminal-cursor">█</span>
+    </div>
+    <input type="text" id="hidden-terminal-input" style="position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px;" autocomplete="off" />
 </div>
+
+<style>
+.terminal-cursor {
+    display: inline-block;
+    animation: blink 0.7s step-end infinite;
+}
+.terminal-cursor.typing {
+    animation: none;
+    opacity: 1;
+}
+.terminal-cursor.blink-twice {
+    animation: blink-twice 1.4s step-end;
+}
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+@keyframes blink-twice {
+    0%, 24% { opacity: 1; }
+    25%, 49% { opacity: 0; }
+    50%, 74% { opacity: 1; }
+    75%, 100% { opacity: 0; }
+}
+</style>
+
+<script>
+(function() {
+    const output = document.getElementById('terminal-output');
+    const dataElement = document.getElementById('terminal-data');
+    const fullText = dataElement.textContent.trim();
+    const lines = fullText.split('\n').map(line => line.trim());
+    const inputLine = document.getElementById('terminal-input-line');
+    const hiddenInput = document.getElementById('hidden-terminal-input');
+    const userInputDisplay = document.getElementById('terminal-user-input');
+    const terminalContainer = document.getElementById('terminal-container');
+
+    let currentLineIndex = 0;
+    let currentCharIndex = 0;
+    let textContent = '';
+    let typingComplete = false;
+
+    const cursor = output.querySelector('.terminal-cursor');
+    cursor.classList.add('typing');
+
+    function typeCharacter() {
+        if (currentLineIndex >= lines.length) {
+            // Typing complete - show input line with cursor
+            output.innerHTML = textContent;
+            inputLine.style.display = 'block';
+            typingComplete = true;
+            return;
+        }
+
+        const currentLine = lines[currentLineIndex];
+
+        if (currentCharIndex < currentLine.length) {
+            // Type next character
+            textContent += currentLine[currentCharIndex];
+            output.innerHTML = textContent + '<span class="terminal-cursor typing">█</span>';
+            currentCharIndex++;
+
+            // Speed: 3 seconds total for all text, distributed evenly
+            const totalChars = lines.join('').length + (lines.length - 1); // +line breaks
+            const charDelay = 3000 / totalChars;
+            setTimeout(typeCharacter, charDelay);
+        } else {
+            // Move to next line
+            currentLineIndex++;
+            currentCharIndex = 0;
+
+            if (currentLineIndex < lines.length) {
+                textContent += '<br>';
+                // 1 second pause between lines
+                setTimeout(typeCharacter, 1000);
+            } else {
+                // Finish typing
+                setTimeout(typeCharacter, 0);
+            }
+        }
+    }
+
+    // Easter egg: Make terminal container clickable to focus hidden input
+    terminalContainer.addEventListener('click', function() {
+        if (typingComplete) {
+            hiddenInput.focus();
+        }
+    });
+
+    // Handle typing in the hidden input
+    hiddenInput.addEventListener('input', function(e) {
+        userInputDisplay.textContent = this.value;
+    });
+
+    // Handle enter key for commands
+    hiddenInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const command = this.value.trim().toLowerCase();
+            executeCommand(command);
+            this.value = '';
+            userInputDisplay.textContent = '';
+        }
+    });
+
+    function executeCommand(cmd) {
+        const responses = {
+            'help': '► AVAILABLE COMMANDS: HELP, ABOUT, VERSION, CLEAR, STATUS, TIME',
+            'about': '► DRAFT MODE v1.0 - RETRO BLOG MANAGEMENT SYSTEM',
+            'version': '► SYSTEM VERSION 1.0.0 - BUILD 2025',
+            'status': '► ALL SYSTEMS OPERATIONAL',
+            'time': '► CURRENT TIME: ' + new Date().toLocaleTimeString(),
+            'clear': '► ACCESS DENIED - TERMINAL LOCKED',
+            'sudo': '► NICE TRY, BUT YOU\'RE NOT ROOT',
+            'exit': '► CANNOT EXIT - SESSION PERSISTENT',
+            'hack': '► [!] SECURITY ALERT: UNAUTHORIZED ACCESS ATTEMPT LOGGED',
+            'hello': '► HELLO, USER. WELCOME TO DRAFT MODE.',
+            'whoami': '► USER: {{ user.name|upper }}'
+        };
+
+        const response = responses[cmd] || '► COMMAND NOT RECOGNIZED: ' + cmd.toUpperCase();
+
+        // Flash the response briefly
+        const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = 'color: var(--accent-green); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;';
+        tempDiv.textContent = response;
+        terminalContainer.appendChild(tempDiv);
+
+        setTimeout(() => {
+            tempDiv.remove();
+        }, 3000);
+    }
+
+    // Start typing after a short delay
+    setTimeout(typeCharacter, 100);
+})();
+</script>
 {% endblock %}
 
 {% block content %}
@@ -34,7 +169,22 @@
             </div>
         </a>
         {% for draft in drafts %}
-        <div class="draft-card">
+        {% set current_version = draft.versions|selectattr('is_current')|first %}
+        {% set border_color = 'var(--border-primary)' %}
+        {% if current_version %}
+            {% if current_version.tag == 'final' %}
+                {% set border_color = 'var(--accent-green)' %}
+            {% elif current_version.tag == 'ready_for_review' %}
+                {% set border_color = 'var(--accent-blue)' %}
+            {% elif current_version.tag == 'working' %}
+                {% set border_color = 'var(--accent-purple)' %}
+            {% elif current_version.tag == 'draft' %}
+                {% set border_color = 'var(--accent-yellow)' %}
+            {% endif %}
+        {% elif draft.versions|length == 0 %}
+            {% set border_color = 'var(--accent-red)' %}
+        {% endif %}
+        <div class="draft-card" style="border-color: {{ border_color }}; {% if border_color != 'var(--border-primary)' %}box-shadow: 0 0 4px {{ border_color }};{% endif %}">
             <div class="draft-header">
                 <div class="draft-title">
                     {% if draft.versions %}
@@ -48,25 +198,15 @@
                         <a href="{{ url_for('drafts.edit_draft', draft_id=draft.id) }}" style="color: inherit; text-decoration: none;">{{ draft.title }}</a>
                     {% endif %}
 
-                    {% if draft.versions %}
-                        {% set has_final = false %}
-                        {% set has_review = false %}
-                        {% set has_working = false %}
-                        {% for version in draft.versions %}
-                            {% if version.tag == 'final' %}
-                                {% set has_final = true %}
-                            {% elif version.tag == 'ready_for_review' %}
-                                {% set has_review = true %}
-                            {% elif version.tag == 'working' %}
-                                {% set has_working = true %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if has_final %}
+                    {% if draft.versions and current_version %}
+                        {% if current_version.tag == 'final' %}
                             <span class="draft-status final">Final</span>
-                        {% elif has_review %}
+                        {% elif current_version.tag == 'ready_for_review' %}
                             <span class="draft-status active" style="background: var(--accent-blue); box-shadow: 0 0 4px var(--accent-blue);">Review</span>
-                        {% elif has_working %}
+                        {% elif current_version.tag == 'working' %}
                             <span class="draft-status active" style="background: var(--accent-purple); box-shadow: 0 0 4px var(--accent-purple);">Working</span>
+                        {% elif current_version.tag == 'draft' %}
+                            <span class="draft-status active">Draft</span>
                         {% else %}
                             <span class="draft-status active">Active</span>
                         {% endif %}
